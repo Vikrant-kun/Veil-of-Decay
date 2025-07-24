@@ -7,7 +7,7 @@ public class PlayerAttack : MonoBehaviour
     public float attackRangeY = 1f;
     public LayerMask enemyLayer;
 
-    public float attackCooldown = 1f; // Cooldown between attacks
+    public float attackCooldown = 1f; 
     private float lastAttackTime = -Mathf.Infinity;
 
     private PlayerMovement playerMovement;
@@ -41,8 +41,15 @@ public class PlayerAttack : MonoBehaviour
             BelerickHealth belerickHealth = enemy.transform.root.GetComponent<BelerickHealth>();
             if (belerickHealth != null)
             {
-                belerickHealth.TakeDamage((int)damage);
-                Debug.Log($"Hit Belerick! Damage: {damage}");
+                if (!belerickHealth.isDead)
+                {
+                    belerickHealth.TakeDamage((int)damage);
+                    Debug.Log($"Hit Belerick! Damage: {damage}");
+                }
+                else
+                {
+                    Debug.Log("✅ Skipped damage — Belerick is already dead.");
+                }
                 continue;
             }
 

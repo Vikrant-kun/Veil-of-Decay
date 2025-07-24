@@ -1,19 +1,31 @@
-[Ll]ibrary/
-[Tt]emp/
-[Bb]uild/
-[Bb]uilds/
-[Oo]bj/
-[Mm]emoryCaptures/
-sysinfo.txt
-*.csproj
+[Libraries to ignore for Unity]
+[Libraries]
+Library/
+Temp/
+Obj/
+Build/
+Builds/
+Logs/
+UserSettings/
+MemoryCaptures/
+
+# Rider and VSCode
+.idea/
+.vscode/
 *.sln
-*.user
-*.unityproj
+*.csproj
+
+# Unity-specific
+*.unitypackage
 *.pidb
-*.booproj
-*.svd
-*.pdb
-*.mdb
-*.opendb
-*.VC.db
-*.DS_Store
+*.suo
+*.user
+*.userprefs
+*.unityproj
+.DS_Store
+
+# Crash and debug stuff
+*.stacktrace
+*.log
+*.diff
+Library/

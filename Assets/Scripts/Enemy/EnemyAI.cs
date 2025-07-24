@@ -1,37 +1,58 @@
 using UnityEngine;
+using System.Collections;
 
 public class EnemyAI : MonoBehaviour
 {
+    [Header("Detection & Attack")]
     public float detectionRange = 8f;
     public float attackRange = 1.5f;
-    public float moveSpeed = 4f;
     public float attackCooldown = 1f;
     public int attackDamage = 10;
-    public Transform groundCheck;
     public Transform attackPoint;
     public float attackRadius = 1f;
-    public LayerMask groundLayer;
     public LayerMask playerLayer;
 
-    private Transform player;
+    [Header("Movement")]
+    public float moveSpeed = 4f;
+    public Transform groundCheck;
+    public LayerMask groundLayer;
+
+    private Transform playerTarget; // Renamed for clarity, will be set by GameRestartManager
     private Animator animator;
     private Rigidbody2D rb;
     private SpriteRenderer sr;
+
     private bool isAttacking = false;
     private bool isPlayerDetected = false;
 
-    void Start()
+    void Awake()
     {
-        player = GameObject.FindGameObjectWithTag("Player").transform;
         animator = GetComponent<Animator>();
         rb = GetComponent<Rigidbody2D>();
         sr = GetComponent<SpriteRenderer>();
+
+        if (animator == null) Debug.LogError("EnemyAI: Animator component not found on this GameObject! Make sure it's attached to " + gameObject.name, this);
+        if (rb == null) Debug.LogError("EnemyAI: Rigidbody2D component not found on this GameObject! Make sure it's attached to " + gameObject.name, this);
+        if (sr == null) Debug.LogError("EnemyAI: SpriteRenderer component not found on this GameObject! Make sure it's attached to " + gameObject.name, this);
+    }
+
+    // New public method to receive player target
+    public void SetPlayerTarget(Transform target)
+    {
+        playerTarget = target;
+        Debug.Log("EnemyAI: Player target received from GameRestartManager: " + playerTarget.name, this);
     }
 
     void Update()
     {
-        float horizontalDistance = Mathf.Abs(transform.position.x - player.position.x);
-        float verticalDistance = Mathf.Abs(transform.position.y - player.position.y);
+        // Only proceed if we have a player target
+        if (playerTarget == null)
+        {
+            return;
+        }
+
+        float horizontalDistance = Mathf.Abs(transform.position.x - playerTarget.position.x);
+        float verticalDistance = Mathf.Abs(transform.position.y - playerTarget.position.y);
 
         isPlayerDetected = horizontalDistance <= detectionRange;
 
@@ -66,7 +87,7 @@ public class EnemyAI : MonoBehaviour
     {
         PlayAnim("Nightborne_run");
 
-        float direction = Mathf.Sign(player.position.x - transform.position.x);
+        float direction = Mathf.Sign(playerTarget.position.x - transform.position.x);
         rb.linearVelocity = new Vector2(direction * moveSpeed, rb.linearVelocity.y);
     }
 
@@ -108,9 +129,16 @@ public class EnemyAI : MonoBehaviour
 
     System.Collections.IEnumerator FlashWhite()
     {
-        sr.color = Color.white;
-        yield return new WaitForSeconds(0.1f);
-        sr.color = Color.red;
+        if (sr != null)
+        {
+            sr.color = Color.white;
+            yield return new WaitForSeconds(0.1f);
+            sr.color = Color.red;
+        }
+        else
+        {
+            Debug.LogWarning("EnemyAI: SpriteRenderer is null, cannot perform FlashWhite effect.");
+        }
     }
 
     void Idle()
@@ -121,28 +149,49 @@ public class EnemyAI : MonoBehaviour
 
     void HandleFlip()
     {
+        if (sr == null || playerTarget == null) return; // Also check playerTarget here
+
         bool shouldFlip = rb.linearVelocity.x > 0.1f || rb.linearVelocity.x < -0.1f;
         if (!shouldFlip) return;
 
         bool facingRight = rb.linearVelocity.x > 0f;
         sr.flipX = !facingRight;
 
-        Vector3 scale = attackPoint.localPosition;
-        scale.x = Mathf.Abs(scale.x) * (facingRight ? 1 : -1);
-        attackPoint.localPosition = scale;
+        if (attackPoint != null)
+        {
+            Vector3 scale = attackPoint.localPosition;
+            scale.x = Mathf.Abs(scale.x) * (facingRight ? 1 : -1);
+            attackPoint.localPosition = scale;
+        }
     }
 
     bool IsGrounded()
     {
+        if (groundCheck == null)
+        {
+            Debug.LogWarning("EnemyAI: groundCheck Transform is null. Cannot perform ground check.", this);
+            return false;
+        }
         return Physics2D.OverlapCircle(groundCheck.position, 0.1f, groundLayer);
     }
 
     void PlayAnim(string animName)
     {
-        if (animator.HasState(0, Animator.StringToHash(animName)))
-            animator.Play(animName);
+        if (animator != null)
+        {
+            if (animator.HasState(0, Animator.StringToHash(animName)))
+            {
+                animator.Play(animName);
+            }
+            else
+            {
+                Debug.LogWarning($"EnemyAI: Missing animation state '{animName}' in Animator Controller for {gameObject.name}.");
+            }
+        }
         else
-            Debug.LogWarning("Missing anim: " + animName);
+        {
+            Debug.LogWarning($"EnemyAI: Animator is null on {gameObject.name}. Cannot play animation: {animName}");
+        }
     }
 
     void OnDrawGizmosSelected()

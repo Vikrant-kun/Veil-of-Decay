@@ -2,44 +2,48 @@ using UnityEngine;
 
 public class BossAttack : MonoBehaviour
 {
-    [Header("Attack Settings")]
-    public float attackRange = 4f;
-    public int attackDamage = 15;
-    public LayerMask playerLayer;
-
     public Transform attackPoint;
+    public float attackRadius = 1.5f;
+    public int damage = 20;
+    public LayerMask playerLayer;
+    public GameObject hitEffect;
+
+    private BelerickHealth belerickHealth;
+
+    void Start()
+    {
+        belerickHealth = GetComponent<BelerickHealth>();
+    }
 
     public void PerformAttack()
     {
-        // Detect all colliders within attack range on the player layer
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, attackRange, playerLayer);
-
-        if (hits.Length == 0)
+        if (belerickHealth != null && belerickHealth.isDead)
         {
-            Debug.Log("🏃 No targets in attack range!");
+            Debug.Log("❌ Belerick tried to attack while dead. Skipping.");
+            return;
         }
 
-        foreach (var hit in hits)
+        Collider2D playerHit = Physics2D.OverlapCircle(attackPoint.position, attackRadius, playerLayer);
+        if (playerHit != null)
         {
-            Transform root = hit.transform.root;
-            Debug.Log($"🎯 Overlap hit: {root.name}");
+            PlayerHealth playerHealth = playerHit.GetComponent<PlayerHealth>();
+            if (playerHealth != null)
+            {
+                playerHealth.TakeDamage(damage);
+                Debug.Log("💥 Belerick hit the player!");
 
-            if (root.TryGetComponent(out PlayerHealth ph))
-            {
-                ph.TakeDamage(attackDamage);
-                Debug.Log($"💥 HIT! {root.name} took {attackDamage} damage!");
-            }
-            else
-            {
-                Debug.LogWarning("⚠️ Hit object has no PlayerHealth!");
+                if (hitEffect != null)
+                    Instantiate(hitEffect, playerHit.transform.position, Quaternion.identity);
             }
         }
     }
 
-    // Just for debugging: show the hitbox in the Scene view
     void OnDrawGizmosSelected()
     {
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, attackRange);
+        if (attackPoint != null)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(attackPoint.position, attackRadius);
+        }
     }
 }

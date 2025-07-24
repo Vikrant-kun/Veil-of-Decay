@@ -3,18 +3,11 @@ using System.Collections;
 
 public class BelerickAI : MonoBehaviour
 {
-    // Existing variables
     public float detectionRange = 8f;
     public float attackRange = 1.5f;
     public float moveSpeed = 4f;
     public float attackCooldown = 1f;
 
-    // Rage Mode specific variables
-    public float ascendHeight = 8f; // How high Belerick "jumps" upwards
-    public float ascendDuration = 0.5f; // Time to reach peak height (set this in Inspector)
-    public float slamDelay = 0.2f; // Short pause at peak before slamming down (set this in Inspector)
-    public float descendDuration = 0.3f; // NEW: How fast he slams down (total time)
-    // public float slamFallSpeed = 20f; // This variable is no longer strictly used for the slam mechanics, but you can keep it if you want to use it for an impact effect
     public LayerMask groundLayer;
 
     public Transform groundCheck;
@@ -23,7 +16,7 @@ public class BelerickAI : MonoBehaviour
     public string attackAnim1 = "Belerick_atk1";
     public string attackAnim2 = "Belerick_atk2";
 
-    private Transform player;
+    private Transform playerTarget; // Renamed for clarity, will be set by GameRestartManager
     private Animator animator;
     private Rigidbody2D rb;
     private SpriteRenderer sr;
@@ -31,13 +24,12 @@ public class BelerickAI : MonoBehaviour
     private bool isAttacking = false;
     private float lastAttackTime = -Mathf.Infinity;
 
-    private enum BelerickState { Normal, RageTransition, RageMode }
+    private enum BelerickState { Normal, RageMode }
     private BelerickState currentState = BelerickState.Normal;
     private Vector3 initialGroundPosition;
 
-    void Start()
+    void Awake()
     {
-        player = GameObject.FindGameObjectWithTag("Player").transform;
         animator = GetComponent<Animator>();
         rb = GetComponent<Rigidbody2D>();
         sr = GetComponent<SpriteRenderer>();
@@ -45,16 +37,24 @@ public class BelerickAI : MonoBehaviour
 
         initialGroundPosition = transform.position;
 
-        if (player == null)
-            Debug.LogError("Player GameObject not found! Make sure your player has the 'Player' tag.");
-
         if (bossAttack == null)
             Debug.LogWarning("⚠️ BelerickAI: Missing BossAttack component!");
     }
 
+    // New public method to receive player target
+    public void SetPlayerTarget(Transform target)
+    {
+        playerTarget = target;
+        Debug.Log("BelerickAI: Player target received from GameRestartManager: " + playerTarget.name, this);
+    }
+
     void Update()
     {
-        if (player == null) return;
+        // Only proceed if we have a player target
+        if (playerTarget == null)
+        {
+            return;
+        }
 
         switch (currentState)
         {
@@ -62,22 +62,14 @@ public class BelerickAI : MonoBehaviour
             case BelerickState.RageMode:
                 HandleCombatState();
                 break;
-            case BelerickState.RageTransition:
-                rb.linearVelocity = Vector2.zero; // Prevent any other movement
-                // Do NOT call HandleFlip() here if you want him to face one way during transition
-                // If you want him to still flip, keep it, but it might look odd mid-air.
-                break;
         }
 
-        if (currentState != BelerickState.RageTransition) // Only flip when not in transition
-        {
-            HandleFlip();
-        }
+        HandleFlip();
     }
 
     void HandleCombatState()
     {
-        float horizontalDistance = Mathf.Abs(transform.position.x - player.position.x);
+        float horizontalDistance = Mathf.Abs(transform.position.x - playerTarget.position.x);
         bool isPlayerDetected = horizontalDistance <= detectionRange;
 
         if (isPlayerDetected)
@@ -103,84 +95,11 @@ public class BelerickAI : MonoBehaviour
             Idle();
         }
     }
-
-    public void StartRageTransition()
-    {
-        if (currentState == BelerickState.RageTransition) return;
-
-        currentState = BelerickState.RageTransition;
-        StopAllCoroutines();
-        StartCoroutine(RageModeSequence());
-    }
-
-    IEnumerator RageModeSequence()
-    {
-        Debug.Log("Belerick: Initiating rage transition sequence!");
-
-        // 1. Ascend (Jump into sky)
-        PlayAnim("Belerick_fly"); // Or Belerick_idle
-        rb.bodyType = RigidbodyType2D.Kinematic; // Make Rigidbody kinematic to control movement purely by transform.position
-        rb.linearVelocity = Vector2.zero;
-
-        Vector3 startPos = transform.position;
-        Vector3 peakPos = new Vector3(transform.position.x, initialGroundPosition.y + ascendHeight, transform.position.z);
-        float timer = 0f;
-
-        while (timer < ascendDuration)
-        {
-            transform.position = Vector3.Lerp(startPos, peakPos, timer / ascendDuration);
-            timer += Time.deltaTime;
-            yield return null;
-        }
-        transform.position = peakPos;
-
-        Debug.Log("Belerick: Reached peak height.");
-
-        // 2. Mid-air pause and color change
-        yield return new WaitForSeconds(slamDelay);
-
-        sr.color = new Color(1f, 0.4f, 0.4f); // Turn red
-        Debug.Log("💢 Belerick changed color!");
-
-        // 3. Descend (Slam on ground)
-        PlayAnim("Belerick_fly"); // Or Belerick_idle, or a specific falling anim if you get one
-        startPos = transform.position; // Start from peak position
-        Vector3 endPos = new Vector3(transform.position.x, initialGroundPosition.y, transform.position.z); // Target original Y
-
-        float t = 0f;
-        while (t < 1f)
-        {
-            t += Time.deltaTime / descendDuration;
-            transform.position = Vector3.Lerp(startPos, endPos, t);
-            yield return null;
-        }
-
-        transform.position = endPos; // Ensure it lands precisely
-
-        rb.linearVelocity = Vector2.zero;
-        rb.bodyType = RigidbodyType2D.Dynamic; // Set back to dynamic
-        rb.gravityScale = 0; // Set gravity back to 0 for normal flying behavior
-
-        Debug.Log("Belerick: Landed from slam.");
-
-        // Optional: Trigger a screen shake or particle effect on slam impact
-        // You can use a custom event or directly call a CameraShake.Instance.ShakeCamera(duration, magnitude); if you have one.
-        // Also, you could use a Physics2D.OverlapCircle here to damage players near the landing spot.
-
-        // 4. Activate Rage Mode buffs
-        currentState = BelerickState.RageMode;
-        moveSpeed *= 1.2f;
-        attackCooldown *= 0.8f;
-        Debug.Log("💢 Belerick entered Rage Mode buffs!");
-    }
-
-    // --- All other methods as previously corrected ---
-
     void MoveTowardsPlayer()
     {
         PlayAnim("Belerick_fly");
 
-        float direction = Mathf.Sign(player.position.x - transform.position.x);
+        float direction = Mathf.Sign(playerTarget.position.x - transform.position.x);
         rb.linearVelocity = new Vector2(direction * moveSpeed, rb.linearVelocity.y);
     }
 
@@ -216,14 +135,24 @@ public class BelerickAI : MonoBehaviour
 
     public void DoFakeDodge()
     {
+        if (sr == null || rb == null)
+        {
+            Debug.LogWarning("BelerickAI: SpriteRenderer or Rigidbody2D is null, cannot perform DoFakeDodge.");
+            return;
+        }
         float dodgeDir = sr.flipX ? -1 : 1;
         rb.AddForce(new Vector2(dodgeDir * 5f, 2f), ForceMode2D.Impulse);
-        PlayAnim("Belerick_idle");
+        PlayAnim("Belerick_fly");
         StartCoroutine(FlashWhite());
     }
 
     IEnumerator FlashWhite()
     {
+        if (sr == null)
+        {
+            Debug.LogWarning("BelerickAI: SpriteRenderer is null, cannot perform FlashWhite effect.");
+            yield break;
+        }
         sr.color = Color.white;
         yield return new WaitForSeconds(0.1f);
         sr.color = Color.red;
@@ -237,9 +166,9 @@ public class BelerickAI : MonoBehaviour
 
     void HandleFlip()
     {
-        if (player == null) return;
+        if (playerTarget == null || sr == null) return; // Also check playerTarget here
 
-        bool facingRight = transform.position.x < player.position.x;
+        bool facingRight = transform.position.x < playerTarget.position.x;
         sr.flipX = !facingRight;
 
         if (bossAttack != null && bossAttack.attackPoint != null)
@@ -252,15 +181,42 @@ public class BelerickAI : MonoBehaviour
 
     bool IsGrounded()
     {
+        if (groundCheck == null)
+        {
+            Debug.LogWarning("BelerickAI: groundCheck Transform is null. Cannot perform ground check.", this);
+            return false;
+        }
         return Physics2D.OverlapCircle(groundCheck.position, 0.1f, groundLayer);
     }
 
     void PlayAnim(string animName)
     {
-        if (animator.HasState(0, Animator.StringToHash(animName)))
-            animator.Play(animName);
+        if (animator != null)
+        {
+            if (animator.HasState(0, Animator.StringToHash(animName)))
+                animator.Play(animName);
+            else
+                Debug.LogWarning("Missing anim: " + animName + " on " + gameObject.name);
+        }
         else
-            Debug.LogWarning("Missing anim: " + animName + " on " + gameObject.name);
+        {
+            Debug.LogWarning("BelerickAI: Animator is null on " + gameObject.name + ". Cannot play animation: " + animName);
+        }
+    }
+
+    public IEnumerator Die()
+    {
+        if (animator != null) animator.Play("Belerick_death");
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
+            rb.bodyType = RigidbodyType2D.Kinematic;
+        }
+
+        yield return new WaitForSeconds(1.5f);
+
+        gameObject.SetActive(false);
+        Debug.Log("☠️ Belerick removed.");
     }
 
     void OnDrawGizmosSelected()

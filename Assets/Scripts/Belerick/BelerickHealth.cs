@@ -16,9 +16,11 @@ public class BelerickHealth : MonoBehaviour
     public Slider healthBarUI;
 
     [Header("Components")]
-    private Animator animator;
-    public bool isDead = false;
+    private Animator anim;
+    private Rigidbody2D rb;
+    private BossAttack bossAttack;
     private BelerickAI belerickAI;
+    public bool isDead = false;
 
     [Header("Post Boss")]
     public TriangleGate triangleGate;
@@ -26,11 +28,14 @@ public class BelerickHealth : MonoBehaviour
     public GameObject angelPrefab;
     public Transform spawnPoint_DemonGate;
     public Transform spawnPoint_Angel;
-    private Rigidbody2D rb;
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        anim = GetComponent<Animator>();
+        bossAttack = GetComponent<BossAttack>();
+        belerickAI = GetComponent<BelerickAI>();
+
         currentHealth = maxHealth;
 
         if (healthBarUI != null)
@@ -38,9 +43,6 @@ public class BelerickHealth : MonoBehaviour
             healthBarUI.maxValue = maxHealth;
             healthBarUI.value = currentHealth;
         }
-
-        animator = GetComponent<Animator>();
-        belerickAI = GetComponent<BelerickAI>();
 
         if (belerickAI == null)
             Debug.LogWarning("BelerickAI not found!");
@@ -83,43 +85,58 @@ public class BelerickHealth : MonoBehaviour
     private IEnumerator HandleDeath()
     {
         isDead = true;
+        Debug.Log("💀 Belerick is dead and frozen.");
 
-        animator.SetTrigger("Death");
-        Debug.Log("☠️ Death triggered.");
+        if (anim != null)
+        {
+            anim.SetTrigger("Death");
+        }
 
-        float deathDuration = GetAnimationClipLength("Belerick_death");
-        yield return new WaitForSeconds(deathDuration);
-
-        animator.enabled = false;
-        rb.linearVelocity = Vector2.zero;
-        rb.gravityScale = 0;
-        rb.constraints = RigidbodyConstraints2D.FreezeAll;
-
-        this.enabled = false;
+        // Disable AI and attack
         if (belerickAI != null)
             belerickAI.enabled = false;
 
-        Debug.Log("💀 Belerick is dead and frozen.");
+        if (bossAttack != null)
+            bossAttack.enabled = false;
 
-        triangleGate?.OpenGate();
+        // Wait for the death anim to finish
+        float animLength = anim != null ? anim.GetCurrentAnimatorStateInfo(0).length : 2f;
+        yield return new WaitForSeconds(animLength);
 
-        if (demonGatePrefab && spawnPoint_DemonGate)
+        // Freeze body
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
+            rb.bodyType = RigidbodyType2D.Static;
+        }
+        
+        if (triangleGate != null)
+            triangleGate.OpenGate();
+
+        if (demonGatePrefab != null && spawnPoint_DemonGate != null)
             Instantiate(demonGatePrefab, spawnPoint_DemonGate.position, Quaternion.identity);
 
-        if (angelPrefab && spawnPoint_Angel)
+        if (angelPrefab != null && spawnPoint_Angel != null)
             Instantiate(angelPrefab, spawnPoint_Angel.position, Quaternion.identity);
+    }
+
+    // Deprecated — not used anymore
+    public void Die()
+    {
+        Debug.Log("💀 Belerick is dead and frozen.");
     }
 
     float GetAnimationClipLength(string clipName)
     {
-        if (animator == null || animator.runtimeAnimatorController == null)
+        if (anim == null || anim.runtimeAnimatorController == null)
             return 1f;
 
-        foreach (var clip in animator.runtimeAnimatorController.animationClips)
+        foreach (var clip in anim.runtimeAnimatorController.animationClips)
         {
             if (clip.name == clipName)
                 return clip.length;
         }
+
         return 1f;
     }
 }
