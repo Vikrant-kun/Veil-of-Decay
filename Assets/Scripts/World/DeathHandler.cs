@@ -39,7 +39,7 @@ public class DeathHandler : MonoBehaviour
         if (playerObject != null)
         {
             player = playerObject.transform;
-            playerHealth = player.GetComponent<PlayerHealth>(); // This is where your error was
+            playerHealth = player.GetComponent<PlayerHealth>(); 
             playerMovement = player.GetComponent<PlayerMovement>();
             playerAttack = player.GetComponent<PlayerAttack>();
             playerRigidbody = player.GetComponent<Rigidbody2D>();
@@ -74,10 +74,6 @@ public class DeathHandler : MonoBehaviour
 
         deathCanvas.gameObject.SetActive(true);
 
-        // REMOVED: CurseEffectManager.Instance.UpdateCurseLevel(currentDeathCount);
-        // No curse in Level 1 now.
-
-        // Now, fade in the death canvas
         float t = 0;
         while (t < fadeDuration)
         {
@@ -87,7 +83,6 @@ public class DeathHandler : MonoBehaviour
         }
         deathCanvas.alpha = 1;
 
-        // After death screen fades in, pause the game.
         Time.timeScale = 0f; 
 
         DeathMessage.gameObject.SetActive(true);
@@ -120,7 +115,6 @@ public class DeathHandler : MonoBehaviour
         deathCanvas.alpha = 0;
         deathCanvas.gameObject.SetActive(false);
 
-        // Keep this flag for the GameRestartManager to know it was a death-restart
         PlayerPrefs.SetInt("GameRestartedFromDeath", 1); 
         PlayerPrefs.Save();
 

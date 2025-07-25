@@ -12,8 +12,10 @@ public class PlayerHealth : MonoBehaviour
     public Slider healthBarUI;
 
     [Header("Healing Flask")]
-    [Tooltip("How many flasks the player starts with")]
-    public int flaskCount = 2;
+    [Tooltip("How many flasks the player currently has")]
+    public int currentHealthFlasks = 2; // Renamed from flaskCount, starts with 2
+    [Tooltip("Maximum flasks the player can carry")]
+    public int maxHealthFlasks = 3; // New: Maximum flask capacity
     [Tooltip("Amount healed per flask")]
     public int healAmount = 40;
     [Tooltip("Key to use a flask")]
@@ -21,14 +23,12 @@ public class PlayerHealth : MonoBehaviour
     [Tooltip("Assign the flask icons in left-to-right order")]
     public Image[] flaskIcons; 
 
-    // components
     private Animator animator;
     private PlayerMovement movement;
     private PlayerAttack attack;
     private SpriteRenderer sr;
     private bool isDead = false;
 
-    // --- NEW: Reference to your DeathHandler ---
     private DeathHandler deathHandler;
 
     void Start()
@@ -45,13 +45,12 @@ public class PlayerHealth : MonoBehaviour
         attack = GetComponent<PlayerAttack>();
         sr = GetComponent<SpriteRenderer>();
 
-        UpdateFlaskIcons();
+        UpdateFlaskIcons(); // Ensure icons are updated at start based on currentHealthFlasks
 
-        // --- NEW: Find the DeathHandler in the scene ---
         deathHandler = FindAnyObjectByType<DeathHandler>();
         if (deathHandler == null)
         {
-            Debug.LogError("PlayerHealth: DeathHandler not found in scene! Player death will not trigger the custom scene.", this);
+            Debug.LogError("PlayerHealth: DeathHandler not found in scene! Player death will not trigger the custom scene.");
         }
     }
 
@@ -72,7 +71,6 @@ public class PlayerHealth : MonoBehaviour
 
         for (int i = 0; i < 2; i++)
         {
-            // Fade to green
             float t = 0;
             while (t < 1f)
             {
@@ -81,7 +79,6 @@ public class PlayerHealth : MonoBehaviour
                 yield return null;
             }
 
-            // Fade back to original
             t = 0;
             while (t < 1f)
             {
@@ -93,13 +90,13 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
-
     private void TryUseFlask()
     {
-        if (flaskCount <= 0 || currentHealth >= maxHealth)
+        // Use currentHealthFlasks instead of flaskCount
+        if (currentHealthFlasks <= 0 || currentHealth >= maxHealth)
             return;
 
-        flaskCount--;
+        currentHealthFlasks--; // Decrement flask count
         currentHealth = Mathf.Clamp(currentHealth + healAmount, 0, maxHealth);
 
         if (healthBarUI != null)
@@ -107,16 +104,15 @@ public class PlayerHealth : MonoBehaviour
 
         StartCoroutine(GlowGreenSmooth());
 
-        UpdateFlaskIcons();
+        UpdateFlaskIcons(); // Update UI after using flask
     }
-
-
 
     private void UpdateFlaskIcons()
     {
         for (int i = 0; i < flaskIcons.Length; i++)
         {
-            flaskIcons[i].enabled = i < flaskCount;
+            // Show icon if its index is less than currentHealthFlasks
+            flaskIcons[i].enabled = i < currentHealthFlasks;
         }
     }
 
@@ -136,19 +132,16 @@ public class PlayerHealth : MonoBehaviour
         }
         else 
         {
-
             if (deathHandler != null)
             {
                 deathHandler.TriggerDeathScene();
-                Debug.Log("PlayerHealth: Triggered global death scene via DeathHandler."); // For debugging
+                Debug.Log("PlayerHealth: Triggered global death scene via DeathHandler.");
             }
             else
             {
-
                 Debug.LogWarning("PlayerHealth: DeathHandler not found. Handling death locally.");
-                StartCoroutine(LocalHandleDeathFallback()); // Renamed original HandleDeath for clarity
+                StartCoroutine(LocalHandleDeathFallback());
             }
-
 
             isDead = true; 
         }
@@ -165,7 +158,33 @@ public class PlayerHealth : MonoBehaviour
             healthBarUI.value = currentHealth;
     }
 
-    private IEnumerator LocalHandleDeathFallback() // Renamed from HandleDeath
+    // --- EXISTING METHOD TO INCREASE MAX HEALTH (no changes needed) ---
+    public void IncreaseMaxHealth(int newMaxHp)
+    {
+        if (newMaxHp > maxHealth)
+        {
+            maxHealth = newMaxHp;
+            currentHealth = maxHealth; // Fully heal player upon max health increase
+            Debug.Log($"Player Max HP increased to: {maxHealth}");
+
+            if (healthBarUI != null)
+            {
+                healthBarUI.maxValue = maxHealth;
+                healthBarUI.value = currentHealth;
+            }
+        }
+    }
+
+    // --- NEW METHOD TO ADD HEALTH FLASKS ---
+    public void AddHealthFlask(int amount)
+    {
+        // Add flasks, but don't exceed maxHealthFlasks
+        currentHealthFlasks = Mathf.Min(currentHealthFlasks + amount, maxHealthFlasks);
+        Debug.Log($"Player gained {amount} health flask(s). Total: {currentHealthFlasks}/{maxHealthFlasks}");
+        UpdateFlaskIcons(); // Immediately update flask UI
+    }
+
+    private IEnumerator LocalHandleDeathFallback()
     {
         if (movement != null) movement.enabled = false;
         if (attack != null) attack.enabled = false;
@@ -178,25 +197,22 @@ public class PlayerHealth : MonoBehaviour
         gameObject.SetActive(false);
     }
 
-    // --- MODIFIED: ResetHealth now truly resets for a respawn ---
     public void ResetHealth()
     {
         currentHealth = maxHealth;
-        isDead = false; // Player is no longer dead
+        isDead = false;
 
         if (healthBarUI != null)
             healthBarUI.value = currentHealth;
 
-        // Re-enable player GameObject if it was deactivated
         gameObject.SetActive(true); 
 
         if (movement != null) movement.enabled = true;
         if (attack != null) attack.enabled = true;
 
-        // Set visuals back to normal if needed
         sr.color = Color.white;
-        animator.Rebind(); // Resets animator to default state
-        animator.Play("idle"); // Or whatever your default animation is
+        animator.Rebind();
+        animator.Play("idle");
     }
 
     private float GetAnimationClipLength(string clipName)

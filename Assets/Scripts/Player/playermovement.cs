@@ -1,9 +1,13 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections;
+using UnityEngine.SceneManagement;
 
 public class PlayerMovement : MonoBehaviour
 {
+    // Add a static instance for the Singleton pattern
+    public static PlayerMovement Instance { get; private set; }
+
     [Header("Movement")]
     public float moveSpeed = 5f;
     private Vector2 moveInput;
@@ -36,53 +40,98 @@ public class PlayerMovement : MonoBehaviour
     [Header("Attack Setup")]
     public Transform attackPoint;
 
-    // Components
+    [Header("Crimson Aegis Strike VFX")]
+    public bool hasCrimsonAegisStrike = false;
+    public GameObject crimsonVFX_Attack1_Prefab;
+    public GameObject crimsonVFX_Attack2_Prefab;
+    public GameObject crimsonVFX_Combo_Prefab;
+    public Transform attackVFXSpawnPoint;
+
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
     private Animator animator;
+    private PlayerAttack attackScript;
 
-    // Input System
     private PlayerInputActions playerControls;
 
-    private void OnEnable()
+    void Awake() // <-- CHANGES START HERE
+    {
+        // Implement Singleton pattern
+        if (Instance == null)
+        {
+            Instance = this;
+            // This is the key line: tells Unity not to destroy this GameObject when a new scene loads
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            // If an instance already exists, destroy this GameObject (to prevent duplicates)
+            Destroy(gameObject);
+            return; // Exit Awake to prevent further initialization of a destroyed object
+        }
+
+        // Initialize component references here.
+        // Doing it in Awake ensures they are ready before Start or OnEnable
+        rb = GetComponent<Rigidbody2D>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        animator = GetComponent<Animator>();
+        attackScript = GetComponent<PlayerAttack>();
+    } // <-- CHANGES END HERE
+
+    void OnEnable()
     {
         if (playerControls == null)
         {
             playerControls = new PlayerInputActions();
-
             playerControls.Player.Walk.performed += ctx => moveInput = ctx.ReadValue<Vector2>();
             playerControls.Player.Walk.canceled += ctx => moveInput = Vector2.zero;
-
             playerControls.Player.Jump.performed += ctx => TryJump();
             playerControls.Player.Attack.performed += ctx => StartCoroutine(TryAttackCombo());
             playerControls.Player.Dash.performed += ctx => TryDash();
         }
-
         playerControls.Enable();
+        SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
     public bool GetFacingRight() => !spriteRenderer.flipX;
 
-    private void OnDisable()
+    void OnDisable()
     {
         if (playerControls != null)
             playerControls.Disable();
+        SceneManager.sceneLoaded -= OnSceneLoaded; // Important to unsubscribe to prevent memory leaks
     }
 
-    private void Start()
+    void Start()
     {
-        rb = GetComponent<Rigidbody2D>();
-        spriteRenderer = GetComponent<SpriteRenderer>();
-        animator = GetComponent<Animator>();
+        // Component initialization moved to Awake for robustness.
+        // No need to initialize them here again unless specifically required for Start logic.
     }
 
-    private void Update()
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // This logic is good, it will move the persistent player to the spawn point in Level2
+        if (scene.name == "Level2")
+        {
+            GameObject spawnPoint = GameObject.Find("PlayerSpawnPoint");
+            if (spawnPoint != null)
+            {
+                transform.position = spawnPoint.transform.position;
+                Debug.Log("Player spawned at: " + spawnPoint.transform.position);
+            }
+            else
+            {
+                Debug.LogWarning("PlayerSpawnPoint not found in scene: " + scene.name + ". Player will remain at current position.");
+            }
+        }
+    }
+
+    void Update()
     {
         if (groundCheck != null)
         {
             bool wasGrounded = isGrounded;
             isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
-
             if (!wasGrounded && isGrounded)
             {
                 jumpCount = 0;
@@ -106,7 +155,7 @@ public class PlayerMovement : MonoBehaviour
         animator.SetBool("isGrounded", isGrounded);
     }
 
-    private void FixedUpdate()
+    void FixedUpdate()
     {
         if (!isAttacking && !isDashing)
         {
@@ -114,7 +163,7 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    private void TryJump()
+    void TryJump()
     {
         if (jumpCount < maxJumps && !isAttacking && !isDashing)
         {
@@ -124,12 +173,10 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    private void TryDash()
+    void TryDash()
     {
         if (isAttacking || isDashing) return;
-
         int direction = isFacingRight ? 1 : -1;
-
         if (isGrounded && canDash)
         {
             StartCoroutine(Dash(direction));
@@ -141,26 +188,19 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    private IEnumerator Dash(int direction)
+    IEnumerator Dash(int direction)
     {
         isDashing = true;
         canDash = false;
-
         animator.SetTrigger("Dash");
-
         float originalGravity = rb.gravityScale;
         rb.gravityScale = 0f;
         rb.linearVelocity = new Vector2(direction * dashForce, 0f);
-
         Physics2D.IgnoreLayerCollision(LayerMask.NameToLayer("Player"), LayerMask.NameToLayer("Enemy"), true);
-
         yield return new WaitForSeconds(dashDuration);
-
         rb.gravityScale = originalGravity;
         isDashing = false;
-
         Physics2D.IgnoreLayerCollision(LayerMask.NameToLayer("Player"), LayerMask.NameToLayer("Enemy"), false);
-
         if (isGrounded)
         {
             yield return new WaitForSeconds(dashCooldown);
@@ -168,52 +208,61 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    private IEnumerator TryAttackCombo()
+    IEnumerator TryAttackCombo()
     {
         if (isAttacking) yield break;
-
         isAttacking = true;
         comboStep = (comboStep % 3) + 1;
-
-        var attackScript = GetComponent<PlayerAttack>();
 
         if (comboStep == 1)
         {
             animator.Play("attack1");
             yield return new WaitForSeconds(0.1f);
-            attackScript.Attack(8f); // attack1 → 5 dmg
+            attackScript.Attack(8f);
+            PlayCrimsonAegisVFX(crimsonVFX_Attack1_Prefab);
             yield return new WaitForSeconds(attack1Duration);
         }
         else if (comboStep == 2)
         {
             animator.Play("attack2");
             yield return new WaitForSeconds(0.1f);
-            attackScript.Attack(8f); // attack2 → 5 dmg
+            attackScript.Attack(8f);
+            PlayCrimsonAegisVFX(crimsonVFX_Attack2_Prefab);
             yield return new WaitForSeconds(attack2Duration);
         }
         else if (comboStep == 3)
         {
-            animator.Play("attack1");
-            yield return new WaitForSeconds(0.1f);
-            attackScript.Attack(15f); // combo part1
-            yield return new WaitForSeconds(attack1Duration);
-
             animator.Play("attack2");
             yield return new WaitForSeconds(0.1f);
-            attackScript.Attack(15f); // combo part2
+            attackScript.Attack(15f);
+            PlayCrimsonAegisVFX(crimsonVFX_Combo_Prefab);
             yield return new WaitForSeconds(attack2Duration);
 
-            yield return new WaitForSeconds(comboResetDelay); // short pause before reset
+            animator.Play("attack1");
+            yield return new WaitForSeconds(0.1f);
+            attackScript.Attack(15f);
+            PlayCrimsonAegisVFX(crimsonVFX_Combo_Prefab);
+            yield return new WaitForSeconds(attack1Duration);
+
+            yield return new WaitForSeconds(comboResetDelay);
         }
 
         isAttacking = false;
     }
 
-    private void Flip()
+    private void PlayCrimsonAegisVFX(GameObject vfxPrefab)
+    {
+        if (hasCrimsonAegisStrike && vfxPrefab != null && attackVFXSpawnPoint != null)
+        {
+            GameObject vfxInstance = Instantiate(vfxPrefab, attackVFXSpawnPoint.position, attackVFXSpawnPoint.rotation);
+            Destroy(vfxInstance, 1.5f);
+        }
+    }
+
+    void Flip()
     {
         isFacingRight = !isFacingRight;
         spriteRenderer.flipX = !spriteRenderer.flipX;
-
         if (attackPoint != null)
         {
             Vector3 localPos = attackPoint.localPosition;
