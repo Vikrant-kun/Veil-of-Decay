@@ -173,7 +173,7 @@ Transform:
   m_GameObject: {fileID: 2017142406797298428}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.5, y: -0.02, z: 0}
+  m_LocalPosition: {x: 0.62, y: -0.147, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -450,7 +450,7 @@ Transform:
   m_GameObject: {fileID: 6107432677325657187}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -5, y: 0.75, z: 0}
+  m_LocalPosition: {x: -5, y: 0.65, z: 0}
   m_LocalScale: {x: 3.2, y: 3.2, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -603,7 +603,7 @@ MonoBehaviour:
   dashCooldown: 0.5
   jumpForce: 15
   groundCheck: {fileID: 6711042127445664517}
-  groundCheckRadius: -1
+  groundCheckRadius: 0
   groundLayer:
     serializedVersion: 2
     m_Bits: 256
@@ -685,6 +685,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 128
   attackCooldown: 0.3
+  attackVFXSpawnPoint: {fileID: 3648562491844569659}
+  crimsonSlashVFX1Prefab: {fileID: 90918759105750035, guid: 092c79528fef8425c8ed96c0ef226f31, type: 3}
+  crimsonSlashVFX2Prefab: {fileID: 6751679204139550878, guid: d434931787ff24d84bf7e5bd853004b2, type: 3}
+  crimsonSlashVFXComboPrefab: {fileID: 4885961827013078975, guid: 319bf56c6601d4b1b9675dae88e78fda, type: 3}
 --- !u!1 &6264310590446191904
 GameObject:
   m_ObjectHideFlags: 0
@@ -950,7 +954,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 236659151809715976}
-  - component: {fileID: 1373919085785126342}
   m_Layer: 0
   m_Name: AttackPoint
   m_TagString: Untagged
@@ -973,25 +976,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 4348059604356356666}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1373919085785126342
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7397794987473209708}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 71757ab6d9fe145e090c42c8bab730fe, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  attackPoint: {fileID: 236659151809715976}
-  attackRangeX: 3
-  attackRangeY: 2
-  enemyLayer:
-    serializedVersion: 2
-    m_Bits: 128
-  attackCooldown: 0.3
 --- !u!1 &7524508375763427995
 GameObject:
   m_ObjectHideFlags: 0
@@ -1138,12 +1122,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_UiScaleMode: 0
+  m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 1920, y: 1080}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
+  m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -1188,6 +1172,6 @@ CanvasGroup:
   m_GameObject: {fileID: 8777652094744202139}
   m_Enabled: 1
   m_Alpha: 1
-  m_Interactable: 1
-  m_BlocksRaycasts: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
   m_IgnoreParentGroups: 0

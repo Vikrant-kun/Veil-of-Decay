@@ -8,7 +8,7 @@ AnimatorState:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: CrimsonStrike2
-  m_Speed: 1
+  m_Speed: 2
   m_CycleOffset: 0
   m_Transitions: []
   m_StateMachineBehaviours: []
@@ -20,7 +20,7 @@ AnimatorState:
   m_MirrorParameterActive: 0
   m_CycleOffsetParameterActive: 0
   m_TimeParameterActive: 0
-  m_Motion: {fileID: 7400000, guid: 898cfea20a67d494c9d8973d79c70730, type: 2}
+  m_Motion: {fileID: 7400000, guid: dcd7b54f00ad54554967b9a049d32dcd, type: 2}
   m_Tag: 
   m_SpeedParameter: 
   m_MirrorParameter: 

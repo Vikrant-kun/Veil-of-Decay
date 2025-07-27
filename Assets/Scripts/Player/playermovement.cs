@@ -5,7 +5,6 @@ using UnityEngine.SceneManagement;
 
 public class PlayerMovement : MonoBehaviour
 {
-    // Add a static instance for the Singleton pattern
     public static PlayerMovement Instance { get; private set; }
 
     [Header("Movement")]
@@ -41,7 +40,7 @@ public class PlayerMovement : MonoBehaviour
     public Transform attackPoint;
 
     [Header("Crimson Aegis Strike VFX")]
-    public bool hasCrimsonAegisStrike = false;
+    public bool hasCrimsonAegisStrike = false; // This should be false by default in the Inspector
     public GameObject crimsonVFX_Attack1_Prefab;
     public GameObject crimsonVFX_Attack2_Prefab;
     public GameObject crimsonVFX_Combo_Prefab;
@@ -54,29 +53,32 @@ public class PlayerMovement : MonoBehaviour
 
     private PlayerInputActions playerControls;
 
-    void Awake() // <-- CHANGES START HERE
+    private float initialVFXSpawnPointLocalX;
+
+    void Awake()
     {
-        // Implement Singleton pattern
         if (Instance == null)
         {
             Instance = this;
-            // This is the key line: tells Unity not to destroy this GameObject when a new scene loads
             DontDestroyOnLoad(gameObject);
         }
         else
         {
-            // If an instance already exists, destroy this GameObject (to prevent duplicates)
             Destroy(gameObject);
-            return; // Exit Awake to prevent further initialization of a destroyed object
+            return;
         }
 
-        // Initialize component references here.
-        // Doing it in Awake ensures they are ready before Start or OnEnable
         rb = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         animator = GetComponent<Animator>();
         attackScript = GetComponent<PlayerAttack>();
-    } // <-- CHANGES END HERE
+
+        if (attackVFXSpawnPoint != null)
+        {
+            initialVFXSpawnPointLocalX = attackVFXSpawnPoint.localPosition.x;
+        }
+        Debug.Log("PlayerMovement: Awake called. hasCrimsonAegisStrike initial: " + hasCrimsonAegisStrike); // ADDED DEBUG
+    }
 
     void OnEnable()
     {
@@ -93,37 +95,36 @@ public class PlayerMovement : MonoBehaviour
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
-    public bool GetFacingRight() => !spriteRenderer.flipX;
-
     void OnDisable()
     {
         if (playerControls != null)
             playerControls.Disable();
-        SceneManager.sceneLoaded -= OnSceneLoaded; // Important to unsubscribe to prevent memory leaks
-    }
-
-    void Start()
-    {
-        // Component initialization moved to Awake for robustness.
-        // No need to initialize them here again unless specifically required for Start logic.
+        SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // This logic is good, it will move the persistent player to the spawn point in Level2
-        if (scene.name == "Level2")
+        Debug.Log("PlayerMovement: OnSceneLoaded called for scene: " + scene.name + " (mode: " + mode.ToString() + ")"); // ADDED DEBUG
+        
+        GameObject spawnPoint = GameObject.Find("PlayerSpawnPoint");
+
+        if (spawnPoint != null)
         {
-            GameObject spawnPoint = GameObject.Find("PlayerSpawnPoint");
-            if (spawnPoint != null)
-            {
-                transform.position = spawnPoint.transform.position;
-                Debug.Log("Player spawned at: " + spawnPoint.transform.position);
-            }
-            else
-            {
-                Debug.LogWarning("PlayerSpawnPoint not found in scene: " + scene.name + ". Player will remain at current position.");
-            }
+            transform.position = spawnPoint.transform.position;
+            Debug.Log($"PlayerMovement: Player respawned at: {spawnPoint.transform.position} in scene: {scene.name}");
         }
+        else
+        {
+            Debug.LogWarning($"PlayerMovement: PlayerSpawnPoint not found in scene: {scene.name}. Player might not be placed correctly.");
+        }
+
+        // Reset abilities if loading FirstLevel (assuming this signifies a new game)
+        if (scene.name == "FirstLevel" && mode == LoadSceneMode.Single)
+        {
+             ResetAbilities();
+             Debug.Log("PlayerMovement: ResetAbilities called in OnSceneLoaded for FirstLevel."); // ADDED DEBUG
+        }
+        Debug.Log("PlayerMovement: OnSceneLoaded finished. hasCrimsonAegisStrike now: " + hasCrimsonAegisStrike); // ADDED DEBUG
     }
 
     void Update()
@@ -217,31 +218,39 @@ public class PlayerMovement : MonoBehaviour
         if (comboStep == 1)
         {
             animator.Play("attack1");
-            yield return new WaitForSeconds(0.1f);
             attackScript.Attack(8f);
-            PlayCrimsonAegisVFX(crimsonVFX_Attack1_Prefab);
+            if (hasCrimsonAegisStrike && crimsonVFX_Attack1_Prefab != null)
+            {
+                attackScript.InstantiateAttackVFX(crimsonVFX_Attack1_Prefab);
+            }
             yield return new WaitForSeconds(attack1Duration);
         }
         else if (comboStep == 2)
         {
             animator.Play("attack2");
-            yield return new WaitForSeconds(0.1f);
             attackScript.Attack(8f);
-            PlayCrimsonAegisVFX(crimsonVFX_Attack2_Prefab);
+            if (hasCrimsonAegisStrike && crimsonVFX_Attack2_Prefab != null)
+            {
+                attackScript.InstantiateAttackVFX(crimsonVFX_Attack2_Prefab);
+            }
             yield return new WaitForSeconds(attack2Duration);
         }
         else if (comboStep == 3)
         {
             animator.Play("attack2");
-            yield return new WaitForSeconds(0.1f);
             attackScript.Attack(15f);
-            PlayCrimsonAegisVFX(crimsonVFX_Combo_Prefab);
+            if (hasCrimsonAegisStrike && crimsonVFX_Combo_Prefab != null)
+            {
+                attackScript.InstantiateAttackVFX(crimsonVFX_Combo_Prefab);
+            }
             yield return new WaitForSeconds(attack2Duration);
 
             animator.Play("attack1");
-            yield return new WaitForSeconds(0.1f);
             attackScript.Attack(15f);
-            PlayCrimsonAegisVFX(crimsonVFX_Combo_Prefab);
+            if (hasCrimsonAegisStrike && crimsonVFX_Combo_Prefab != null)
+            {
+                        attackScript.InstantiateAttackVFX(crimsonVFX_Combo_Prefab);
+            }
             yield return new WaitForSeconds(attack1Duration);
 
             yield return new WaitForSeconds(comboResetDelay);
@@ -250,24 +259,36 @@ public class PlayerMovement : MonoBehaviour
         isAttacking = false;
     }
 
-    private void PlayCrimsonAegisVFX(GameObject vfxPrefab)
-    {
-        if (hasCrimsonAegisStrike && vfxPrefab != null && attackVFXSpawnPoint != null)
-        {
-            GameObject vfxInstance = Instantiate(vfxPrefab, attackVFXSpawnPoint.position, attackVFXSpawnPoint.rotation);
-            Destroy(vfxInstance, 1.5f);
-        }
-    }
-
     void Flip()
     {
         isFacingRight = !isFacingRight;
         spriteRenderer.flipX = !spriteRenderer.flipX;
+
         if (attackPoint != null)
         {
             Vector3 localPos = attackPoint.localPosition;
             localPos.x *= -1f;
             attackPoint.localPosition = localPos;
         }
+
+        if (attackVFXSpawnPoint != null)
+        {
+            Vector3 vfxLocalPos = attackVFXSpawnPoint.localPosition;
+            if (isFacingRight)
+            {
+                vfxLocalPos.x = initialVFXSpawnPointLocalX;
+            }
+            else
+            {
+                vfxLocalPos.x = -initialVFXSpawnPointLocalX;
+            }
+            attackVFXSpawnPoint.localPosition = vfxLocalPos;
+        }
+    }
+
+    public void ResetAbilities()
+    {
+        hasCrimsonAegisStrike = false;
+        Debug.Log("PlayerMovement: ResetAbilities method EXECUTED. hasCrimsonAegisStrike is now: " + hasCrimsonAegisStrike); // ADDED DEBUG
     }
 }

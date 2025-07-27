@@ -1,20 +1,33 @@
+// PlayerAttack.cs
 using UnityEngine;
 
 public class PlayerAttack : MonoBehaviour
 {
+    [Header("Attack Settings")]
     public Transform attackPoint;
     public float attackRangeX = 1.5f;
     public float attackRangeY = 1f;
     public LayerMask enemyLayer;
 
-    public float attackCooldown = 1f; 
+    public float attackCooldown = 1f;
     private float lastAttackTime = -Mathf.Infinity;
 
+    [Header("VFX Settings")]
+    public Transform attackVFXSpawnPoint;
+
+    // These public fields are for assignment in the Inspector.
+    // They are accessed by PlayerMovement to pass the correct prefab.
+    public GameObject crimsonSlashVFX1Prefab;
+    public GameObject crimsonSlashVFX2Prefab;
+    public GameObject crimsonSlashVFXComboPrefab;
+
     private PlayerMovement playerMovement;
+    private SpriteRenderer playerSpriteRenderer;
 
     private void Start()
     {
         playerMovement = GetComponent<PlayerMovement>();
+        playerSpriteRenderer = GetComponent<SpriteRenderer>();
     }
 
     public void Attack(float damage)
@@ -26,7 +39,6 @@ public class PlayerAttack : MonoBehaviour
 
         if (attackPoint == null || playerMovement == null)
         {
-            Debug.LogWarning("Missing references: attackPoint or playerMovement");
             return;
         }
 
@@ -37,18 +49,12 @@ public class PlayerAttack : MonoBehaviour
 
         foreach (Collider2D enemy in hitEnemies)
         {
-            // Always check the root in case colliders are on child objects
             BelerickHealth belerickHealth = enemy.transform.root.GetComponent<BelerickHealth>();
             if (belerickHealth != null)
             {
                 if (!belerickHealth.isDead)
                 {
                     belerickHealth.TakeDamage((int)damage);
-                    Debug.Log($"Hit Belerick! Damage: {damage}");
-                }
-                else
-                {
-                    Debug.Log("✅ Skipped damage — Belerick is already dead.");
                 }
                 continue;
             }
@@ -56,12 +62,33 @@ public class PlayerAttack : MonoBehaviour
             if (enemy.TryGetComponent<EnemyHealth>(out var enemyHealth))
             {
                 enemyHealth.TakeDamage((int)damage);
-                Debug.Log($"Hit general enemy! Damage: {damage}");
                 continue;
             }
-
-            Debug.LogWarning($"Hit object '{enemy.name}' on layer '{LayerMask.LayerToName(enemy.gameObject.layer)}' but no health script found.");
         }
+    }
+
+    // This method is called by PlayerMovement to instantiate and flip the VFX
+    public void InstantiateAttackVFX(GameObject vfxPrefab)
+    {
+        if (vfxPrefab == null || attackVFXSpawnPoint == null || playerSpriteRenderer == null)
+        {
+            return;
+        }
+
+        GameObject vfxInstance = Instantiate(vfxPrefab, attackVFXSpawnPoint.position, attackVFXSpawnPoint.rotation);
+
+        SpriteRenderer vfxSpriteRenderer = vfxInstance.GetComponent<SpriteRenderer>();
+        if (vfxSpriteRenderer == null)
+        {
+            vfxSpriteRenderer = vfxInstance.GetComponentInChildren<SpriteRenderer>();
+        }
+
+        if (vfxSpriteRenderer != null)
+        {
+            vfxSpriteRenderer.flipX = playerSpriteRenderer.flipX;
+        }
+
+        Destroy(vfxInstance, 1.5f); // Assuming 1.5s is a good general lifetime for your attack VFX
     }
 
     void OnDrawGizmosSelected()

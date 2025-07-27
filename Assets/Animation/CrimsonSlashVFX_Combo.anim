@@ -22,28 +22,28 @@ AnimationClip:
     curve:
     - time: 0
       value: {fileID: 21300000, guid: ebaa97ea9c8cf4af7b7a25e9fade4fe5, type: 3}
-    - time: 0.083333336
+    - time: 0.071428575
       value: {fileID: 21300000, guid: 5eba6c11b0eca4dbfb840acccd36b2ce, type: 3}
-    - time: 0.16666667
+    - time: 0.14285715
       value: {fileID: 21300000, guid: cb87c8dd32e954ae0ac86a2e26b7a536, type: 3}
-    - time: 0.25
+    - time: 0.21428572
       value: {fileID: 21300000, guid: 3deb9f6596bbd46ac99b45aca5e7fecd, type: 3}
-    - time: 0.33333334
+    - time: 0.2857143
       value: {fileID: 21300000, guid: b71810cb950794b1b9c13a0f3bde152b, type: 3}
-    - time: 0.41666666
+    - time: 0.35714287
       value: {fileID: 21300000, guid: ff6daa9f4cf77487485e8c264111281c, type: 3}
-    - time: 0.5
+    - time: 0.42857143
       value: {fileID: 21300000, guid: 841e85d7eb7f74bd7b6f1bca5dceaa8f, type: 3}
-    - time: 0.5833333
+    - time: 0.5
       value: {fileID: 21300000, guid: ee93d5f925b0a4f69b2eed1ceb23ca76, type: 3}
-    - time: 0.6666667
+    - time: 0.5714286
       value: {fileID: 21300000, guid: e9b0794bd68664b36b934904340ae973, type: 3}
     attribute: m_Sprite
     path: 
     classID: 212
     script: {fileID: 0}
     flags: 2
-  m_SampleRate: 12
+  m_SampleRate: 14
   m_WrapMode: 0
   m_Bounds:
     m_Center: {x: 0, y: 0, z: 0}
@@ -74,7 +74,7 @@ AnimationClip:
     m_AdditiveReferencePoseClip: {fileID: 0}
     m_AdditiveReferencePoseTime: 0
     m_StartTime: 0
-    m_StopTime: 0.75
+    m_StopTime: 0.6428572
     m_OrientationOffsetY: 0
     m_Level: 0
     m_CycleOffset: 0
@@ -93,4 +93,11 @@ AnimationClip:
   m_EulerEditorCurves: []
   m_HasGenericRootTransform: 0
   m_HasMotionFloatCurves: 0
-  m_Events: []
+  m_Events:
+  - time: 0.64285713
+    functionName: DestroyVFXGameObject
+    data: 
+    objectReferenceParameter: {fileID: 0}
+    floatParameter: 0
+    intParameter: 0
+    messageOptions: 0
