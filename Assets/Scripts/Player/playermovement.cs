@@ -169,7 +169,7 @@ public class PlayerMovement : MonoBehaviour
         if (jumpCount < maxJumps && !isAttacking && !isDashing)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-            animator.SetTrigger("Jump");
+            animator.SetTrigger("isJumping");
             jumpCount++;
         }
     }

@@ -14,7 +14,7 @@ public class PlayerHUDManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject); // Make this HUD Canvas persist across scenes
+            
             if (canvasGroup == null)
             {
                 canvasGroup = GetComponent<CanvasGroup>(); // Try to get CanvasGroup if not assigned
