@@ -2,10 +2,22 @@ using UnityEngine;
 
 public class CameraFollow : MonoBehaviour
 {
-    public Transform target;
+    private Transform target;
     public float offsetZ = -10f; 
     public float offsetY = 2f; 
     public float smoothSpeed = 7f; 
+
+    void Start()
+    {
+        if (target == null)
+        {
+            GameObject playerObject = GameObject.FindWithTag("Player");
+            if (playerObject != null)
+            {
+                target = playerObject.transform;
+            }
+        }
+    }
 
     void LateUpdate() 
     {
@@ -22,6 +34,5 @@ public class CameraFollow : MonoBehaviour
     public void SetTarget(Transform newTarget)
     {
         target = newTarget;
-        Debug.Log("CameraFollow: Target set to " + newTarget.name);
     }
 }

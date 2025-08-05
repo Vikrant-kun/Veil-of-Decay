@@ -1,0 +1,106 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!74 &7400000
+AnimationClip:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: CrimsonSurge_Attack
+  serializedVersion: 7
+  m_Legacy: 0
+  m_Compressed: 0
+  m_UseHighQualityCurve: 1
+  m_RotationCurves: []
+  m_CompressedRotationCurves: []
+  m_EulerCurves: []
+  m_PositionCurves: []
+  m_ScaleCurves: []
+  m_FloatCurves: []
+  m_PPtrCurves:
+  - serializedVersion: 2
+    curve:
+    - time: 0
+      value: {fileID: 21300000, guid: 1af1caed720fe47019605fc4955fef64, type: 3}
+    - time: 0.083333336
+      value: {fileID: 21300000, guid: dede0da8ce4144fff9f29b51f4bf296a, type: 3}
+    - time: 0.16666667
+      value: {fileID: 21300000, guid: cd1c91e0e2a7649d8ad5b766bb692966, type: 3}
+    - time: 0.25
+      value: {fileID: 21300000, guid: 1c9b837600f7441a9beb38c7fec4c97f, type: 3}
+    - time: 0.33333334
+      value: {fileID: 21300000, guid: e0c9286deedbe46eb84561e9c410bfb4, type: 3}
+    - time: 0.41666666
+      value: {fileID: 21300000, guid: 75f292cd8c4ff4ac0ae38ecce7794c17, type: 3}
+    - time: 0.5
+      value: {fileID: 21300000, guid: 76258a9bd1afc4c7b86775981154a90b, type: 3}
+    - time: 0.5833333
+      value: {fileID: 21300000, guid: fe1adcf4b30064c649d475f340928d8b, type: 3}
+    - time: 0.6666667
+      value: {fileID: 21300000, guid: 48996eb3f6e7d4b51bafdae47c9c7c26, type: 3}
+    - time: 0.75
+      value: {fileID: 21300000, guid: 090d2afe34ba64e9f99c66f8c28d61fa, type: 3}
+    attribute: m_Sprite
+    path: 
+    classID: 212
+    script: {fileID: 0}
+    flags: 2
+  m_SampleRate: 12
+  m_WrapMode: 0
+  m_Bounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
+  m_ClipBindingConstant:
+    genericBindings:
+    - serializedVersion: 2
+      path: 0
+      attribute: 0
+      script: {fileID: 0}
+      typeID: 212
+      customType: 23
+      isPPtrCurve: 1
+      isIntCurve: 0
+      isSerializeReferenceCurve: 0
+    pptrCurveMapping:
+    - {fileID: 21300000, guid: 1af1caed720fe47019605fc4955fef64, type: 3}
+    - {fileID: 21300000, guid: dede0da8ce4144fff9f29b51f4bf296a, type: 3}
+    - {fileID: 21300000, guid: cd1c91e0e2a7649d8ad5b766bb692966, type: 3}
+    - {fileID: 21300000, guid: 1c9b837600f7441a9beb38c7fec4c97f, type: 3}
+    - {fileID: 21300000, guid: e0c9286deedbe46eb84561e9c410bfb4, type: 3}
+    - {fileID: 21300000, guid: 75f292cd8c4ff4ac0ae38ecce7794c17, type: 3}
+    - {fileID: 21300000, guid: 76258a9bd1afc4c7b86775981154a90b, type: 3}
+    - {fileID: 21300000, guid: fe1adcf4b30064c649d475f340928d8b, type: 3}
+    - {fileID: 21300000, guid: 48996eb3f6e7d4b51bafdae47c9c7c26, type: 3}
+    - {fileID: 21300000, guid: 090d2afe34ba64e9f99c66f8c28d61fa, type: 3}
+  m_AnimationClipSettings:
+    serializedVersion: 2
+    m_AdditiveReferencePoseClip: {fileID: 0}
+    m_AdditiveReferencePoseTime: 0
+    m_StartTime: 0
+    m_StopTime: 0.8333333
+    m_OrientationOffsetY: 0
+    m_Level: 0
+    m_CycleOffset: 0
+    m_HasAdditiveReferencePose: 0
+    m_LoopTime: 0
+    m_LoopBlend: 0
+    m_LoopBlendOrientation: 0
+    m_LoopBlendPositionY: 0
+    m_LoopBlendPositionXZ: 0
+    m_KeepOriginalOrientation: 0
+    m_KeepOriginalPositionY: 1
+    m_KeepOriginalPositionXZ: 0
+    m_HeightFromFeet: 0
+    m_Mirror: 0
+  m_EditorCurves: []
+  m_EulerEditorCurves: []
+  m_HasGenericRootTransform: 0
+  m_HasMotionFloatCurves: 0
+  m_Events:
+  - time: 0
+    functionName: DealCrimsonSurgeDamage
+    data: 
+    objectReferenceParameter: {fileID: 4551520554158809052, guid: 51dc6467c7d9b429d94b52f61ba73afe, type: 3}
+    floatParameter: 0
+    intParameter: 0
+    messageOptions: 0

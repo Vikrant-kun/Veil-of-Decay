@@ -146,13 +146,6 @@ else
 
 Debug.Log("GameRestartManager: Game started normally or not from death. Enabling player controls."); // Log message changed
 
-// No PlayerPrefs.SetInt("DeathCount", 0) or CurseEffectManager.UpdateCurseLevel(0) here now.
-
-// The curse is not active in Level 1.
-
-
-
-// Re-enable player controls for normal start
 
 if (currentPlayerTransform != null)
 
@@ -186,9 +179,6 @@ playerRb.simulated = true;
 
 }
 
-
-
-// IMPORTANT: Tell enemies AND spawners about the player after player is known
 
 if (currentPlayerTransform != null)
 

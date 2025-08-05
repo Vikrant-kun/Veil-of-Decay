@@ -9,8 +9,10 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Movement")]
     public float moveSpeed = 5f;
+    private float normalMoveSpeed; // Stores the player's original movement speed
     private Vector2 moveInput;
     public bool isFacingRight = true;
+    public float chargingWalkSpeed = 2f; // New variable for the walk speed while charging
 
     [Header("Dash")]
     public float dashForce = 20f;
@@ -40,7 +42,7 @@ public class PlayerMovement : MonoBehaviour
     public Transform attackPoint;
 
     [Header("Crimson Aegis Strike VFX")]
-    public bool hasCrimsonAegisStrike = false; // This should be false by default in the Inspector
+    public bool hasCrimsonAegisStrike = false;
     public GameObject crimsonVFX_Attack1_Prefab;
     public GameObject crimsonVFX_Attack2_Prefab;
     public GameObject crimsonVFX_Combo_Prefab;
@@ -77,7 +79,8 @@ public class PlayerMovement : MonoBehaviour
         {
             initialVFXSpawnPointLocalX = attackVFXSpawnPoint.localPosition.x;
         }
-        Debug.Log("PlayerMovement: Awake called. hasCrimsonAegisStrike initial: " + hasCrimsonAegisStrike); // ADDED DEBUG
+
+        normalMoveSpeed = moveSpeed;
     }
 
     void OnEnable()
@@ -104,27 +107,32 @@ public class PlayerMovement : MonoBehaviour
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        Debug.Log("PlayerMovement: OnSceneLoaded called for scene: " + scene.name + " (mode: " + mode.ToString() + ")"); // ADDED DEBUG
-        
         GameObject spawnPoint = GameObject.Find("PlayerSpawnPoint");
 
         if (spawnPoint != null)
         {
             transform.position = spawnPoint.transform.position;
-            Debug.Log($"PlayerMovement: Player respawned at: {spawnPoint.transform.position} in scene: {scene.name}");
+        }
+
+        if (scene.name == "FirstLevel" && mode == LoadSceneMode.Single)
+        {
+            ResetAbilities();
+        }
+
+        ResetJumpAndDash();
+    }
+    
+    // New method to set the charging walk speed
+    public void SetChargingWalkSpeed(bool isCharging)
+    {
+        if (isCharging)
+        {
+            moveSpeed = chargingWalkSpeed;
         }
         else
         {
-            Debug.LogWarning($"PlayerMovement: PlayerSpawnPoint not found in scene: {scene.name}. Player might not be placed correctly.");
+            moveSpeed = normalMoveSpeed;
         }
-
-        // Reset abilities if loading FirstLevel (assuming this signifies a new game)
-        if (scene.name == "FirstLevel" && mode == LoadSceneMode.Single)
-        {
-             ResetAbilities();
-             Debug.Log("PlayerMovement: ResetAbilities called in OnSceneLoaded for FirstLevel."); // ADDED DEBUG
-        }
-        Debug.Log("PlayerMovement: OnSceneLoaded finished. hasCrimsonAegisStrike now: " + hasCrimsonAegisStrike); // ADDED DEBUG
     }
 
     void Update()
@@ -150,7 +158,12 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
-        animator.SetBool("isRunning", Mathf.Abs(moveInput.x) > 0.01f && !isAttacking && !isDashing);
+        // Updated animation logic to handle the charging walk
+        bool isMoving = Mathf.Abs(moveInput.x) > 0.01f;
+        bool isCharging = attackScript.IsCharging();
+
+        animator.SetBool("IsChargingWalk", isMoving && isCharging);
+        animator.SetBool("isRunning", isMoving && !isAttacking && !isDashing && !isCharging);
         animator.SetBool("isJumping", !isGrounded && rb.linearVelocity.y > 0.1f);
         animator.SetBool("isFalling", !isGrounded && rb.linearVelocity.y < -0.1f);
         animator.SetBool("isGrounded", isGrounded);
@@ -249,10 +262,9 @@ public class PlayerMovement : MonoBehaviour
             attackScript.Attack(15f);
             if (hasCrimsonAegisStrike && crimsonVFX_Combo_Prefab != null)
             {
-                        attackScript.InstantiateAttackVFX(crimsonVFX_Combo_Prefab);
+                attackScript.InstantiateAttackVFX(crimsonVFX_Combo_Prefab);
             }
             yield return new WaitForSeconds(attack1Duration);
-
             yield return new WaitForSeconds(comboResetDelay);
         }
 
@@ -289,6 +301,13 @@ public class PlayerMovement : MonoBehaviour
     public void ResetAbilities()
     {
         hasCrimsonAegisStrike = false;
-        Debug.Log("PlayerMovement: ResetAbilities method EXECUTED. hasCrimsonAegisStrike is now: " + hasCrimsonAegisStrike); // ADDED DEBUG
+    }
+
+    public void ResetJumpAndDash()
+    {
+        jumpCount = 0;
+        canDash = true;
+        hasAirDashed = false;
+        isDashing = false;
     }
 }
