@@ -1,6 +1,6 @@
 using UnityEngine;
-using UnityEngine.UI; 
-using System.Collections; 
+using UnityEngine.UI;
+using System.Collections;
 
 public class DarkSoulHealth : MonoBehaviour
 {
@@ -13,19 +13,19 @@ public class DarkSoulHealth : MonoBehaviour
     [Header("UI References")]
     public Slider healthBar;
 
-    private DarkSoul darkSoulAI; 
+    private DarkSoul darkSoulAI;
     private Animator animator;
     private Rigidbody2D rb;
     private Collider2D enemyCollider;
     private SpriteRenderer sr;
 
     [Header("Animator Params")]
-    public string animParamDeathTrigger = "Death"; 
+    public string animParamDeathTrigger = "Death";
 
     void Awake()
     {
         animator = GetComponent<Animator>();
-        darkSoulAI = GetComponent<DarkSoul>(); 
+        darkSoulAI = GetComponent<DarkSoul>();
         rb = GetComponent<Rigidbody2D>();
         enemyCollider = GetComponent<Collider2D>();
         sr = GetComponent<SpriteRenderer>();
@@ -45,9 +45,9 @@ public class DarkSoulHealth : MonoBehaviour
         {
             healthBar.maxValue = maxHealth;
             healthBar.value = currentHealth;
-            healthBar.gameObject.SetActive(false); 
+            healthBar.gameObject.SetActive(false); // Hide health bar initially
         }
-        ResetEnemyState();
+        ResetEnemyState(); // Ensure initial state is healthy and visible/hidden as per design
     }
 
     public void TakeDamage(float damage)
@@ -59,13 +59,15 @@ public class DarkSoulHealth : MonoBehaviour
         if (healthBar != null)
         {
             healthBar.value = currentHealth;
-            healthBar.gameObject.SetActive(true);
+            healthBar.gameObject.SetActive(true); // Show health bar when taking damage
         }
 
         if (currentHealth <= 0f)
         {
             Die();
-        } else {
+        }
+        else
+        {
             StartCoroutine(FlashColor(Color.white, 0.1f));
         }
     }
@@ -77,38 +79,38 @@ public class DarkSoulHealth : MonoBehaviour
 
         if (animator != null)
         {
-            animator.SetTrigger(animParamDeathTrigger); 
+            animator.SetTrigger(animParamDeathTrigger);
         }
-        
+
         if (darkSoulAI != null)
         {
-            darkSoulAI.enabled = false; 
+            darkSoulAI.enabled = false;
         }
 
         if (rb != null)
         {
             rb.linearVelocity = Vector2.zero;
-            rb.bodyType = RigidbodyType2D.Static; 
+            rb.bodyType = RigidbodyType2D.Static;
             rb.gravityScale = 0f;
         }
 
         if (enemyCollider != null)
         {
-            enemyCollider.enabled = false; 
+            enemyCollider.enabled = false;
         }
 
         if (healthBar != null)
         {
-            healthBar.gameObject.SetActive(false); 
+            healthBar.gameObject.SetActive(false);
         }
-        
+
         StartCoroutine(DisableGameObjectAfterDelay(GetAnimationLength(animParamDeathTrigger) + 0.1f));
     }
 
     private IEnumerator DisableGameObjectAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
-        gameObject.SetActive(false); 
+        gameObject.SetActive(false);
     }
 
     private IEnumerator FlashColor(Color flashColor, float duration)
@@ -125,16 +127,16 @@ public class DarkSoulHealth : MonoBehaviour
     private float GetAnimationLength(string triggerName)
     {
         if (animator == null || animator.runtimeAnimatorController == null)
-            return 1f; 
+            return 1f;
 
         foreach (var clip in animator.runtimeAnimatorController.animationClips)
         {
-            if (clip.name.ToLower().Contains("death")) 
+            if (clip.name.ToLower().Contains("death"))
             {
                 return clip.length;
             }
         }
-        return 1f; 
+        return 1f;
     }
 
     public void ResetEnemyState()
@@ -145,26 +147,26 @@ public class DarkSoulHealth : MonoBehaviour
         gameObject.SetActive(true);
 
         if (darkSoulAI != null) darkSoulAI.enabled = true;
-        if (rb != null) 
+        if (rb != null)
         {
-            rb.bodyType = RigidbodyType2D.Kinematic; 
+            rb.bodyType = RigidbodyType2D.Kinematic;
             rb.gravityScale = 0f;
             rb.linearVelocity = Vector2.zero;
         }
         if (enemyCollider != null) enemyCollider.enabled = true;
-        if (sr != null) sr.enabled = true; 
+        if (sr != null) sr.enabled = true;
 
         if (animator != null)
         {
             animator.Rebind();
-            animator.Play("idle"); 
-            animator.ResetTrigger(animParamDeathTrigger); 
+            animator.Play("idle");
+            animator.ResetTrigger(animParamDeathTrigger);
         }
-        
+
         if (healthBar != null)
         {
             healthBar.value = maxHealth;
-            healthBar.gameObject.SetActive(false); 
+            healthBar.gameObject.SetActive(false);
         }
     }
 }

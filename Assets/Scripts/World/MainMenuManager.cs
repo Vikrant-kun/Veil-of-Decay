@@ -3,34 +3,31 @@ using UnityEngine.SceneManagement;
 
 public class MainMenuManager : MonoBehaviour
 {
-    public string gameSceneName = "FirstLevel"; // Make sure this is "Level1" if that's your starting game level
+    public string gameSceneName = "FirstLevel"; 
 
     public void StartGame()
     {
-        Debug.Log("MainMenuManager: 'Start Game' button clicked."); // ADDED DEBUG
+        Debug.Log("MainMenuManager: 'Start Game' button clicked.");
         
-        // --- CRUCIAL ADDITION HERE ---
-        // Find the PlayerMovement instance and reset its abilities BEFORE loading the scene.
-        // Since PlayerMovement uses DontDestroyOnLoad, it persists, so we need to reset its state.
         if (PlayerMovement.Instance != null)
         {
-            Debug.Log("MainMenuManager: PlayerMovement.Instance found. Calling ResetAbilities."); // ADDED DEBUG
+            Debug.Log("MainMenuManager: PlayerMovement.Instance found. Calling ResetAbilities.");
             PlayerMovement.Instance.ResetAbilities(); 
-            Debug.Log("MainMenuManager: ResetAbilities called. PlayerMovement.Instance.hasCrimsonAegisStrike after call: " + PlayerMovement.Instance.hasCrimsonAegisStrike); // ADDED DEBUG
+            // Reverted: Checking PlayerMovement.Instance for hasCrimsonAegisStrike
+            Debug.Log("MainMenuManager: ResetAbilities called. PlayerMovement.Instance.hasCrimsonAegisStrike after call: " + PlayerMovement.Instance.hasCrimsonAegisStrike); 
         }
         else
         {
-            Debug.LogWarning("MainMenuManager: PlayerMovement.Instance not found when starting game. This might happen if PlayerMovement is not yet initialized or is not persistent."); // ADDED DEBUG
+            Debug.LogWarning("MainMenuManager: PlayerMovement.Instance not found when starting game. This might happen if PlayerMovement is not yet initialized or is not persistent.");
         }
-        // --- END CRUCIAL ADDITION ---
 
         SceneManager.LoadScene(gameSceneName);
-        Debug.Log("MainMenuManager: Loading scene: " + gameSceneName); // ADDED DEBUG
+        Debug.Log("MainMenuManager: Loading scene: " + gameSceneName);
     }
 
     public void QuitGame()
     {
-        Debug.Log("MainMenuManager: Quitting Game..."); // ADDED DEBUG
+        Debug.Log("MainMenuManager: Quitting Game...");
         Application.Quit();
 
         #if UNITY_EDITOR

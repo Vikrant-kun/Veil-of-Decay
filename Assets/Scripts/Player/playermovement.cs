@@ -6,13 +6,16 @@ using UnityEngine.SceneManagement;
 public class PlayerMovement : MonoBehaviour
 {
     public static PlayerMovement Instance { get; private set; }
+    
+    // The static variable to hold the last checkpoint position
+    public static Vector3 lastCheckpointPosition;
 
     [Header("Movement")]
     public float moveSpeed = 5f;
-    private float normalMoveSpeed; // Stores the player's original movement speed
+    private float normalMoveSpeed;
     private Vector2 moveInput;
     public bool isFacingRight = true;
-    public float chargingWalkSpeed = 2f; // New variable for the walk speed while charging
+    public float chargingWalkSpeed = 2f;
 
     [Header("Dash")]
     public float dashForce = 20f;
@@ -26,8 +29,7 @@ public class PlayerMovement : MonoBehaviour
     public float jumpForce = 12f;
     public Transform groundCheck;
     public float groundCheckRadius = 0.2f;
-    [Tooltip("Select all layers that the player can jump from, including ground and moving platforms.")]
-    public LayerMask groundLayer; // Added tooltip for clarity
+    public LayerMask groundLayer;
     private bool isGrounded = false;
     public int maxJumps = 2;
     private int jumpCount = 0;
@@ -42,8 +44,9 @@ public class PlayerMovement : MonoBehaviour
     [Header("Attack Setup")]
     public Transform attackPoint;
 
+    // Reinstated: hasCrimsonAegisStrike on PlayerMovement
     [Header("Crimson Aegis Strike VFX")]
-    public bool hasCrimsonAegisStrike = false;
+    public bool hasCrimsonAegisStrike = false; // This flag is now back on PlayerMovement
     public GameObject crimsonVFX_Attack1_Prefab;
     public GameObject crimsonVFX_Attack2_Prefab;
     public GameObject crimsonVFX_Combo_Prefab;
@@ -64,6 +67,8 @@ public class PlayerMovement : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            
+            lastCheckpointPosition = transform.position;
         }
         else
         {
@@ -82,6 +87,11 @@ public class PlayerMovement : MonoBehaviour
         }
 
         normalMoveSpeed = moveSpeed;
+    }
+    
+    public static void SetCheckpoint(Vector3 position)
+    {
+        lastCheckpointPosition = position;
     }
 
     void OnEnable()
@@ -123,7 +133,30 @@ public class PlayerMovement : MonoBehaviour
         ResetJumpAndDash();
     }
     
-    // New method to set the charging walk speed
+    public void Respawn()
+    {
+        if (lastCheckpointPosition != Vector3.zero)
+        {
+            transform.position = lastCheckpointPosition;
+        }
+        else
+        {
+            GameObject spawnPoint = GameObject.Find("PlayerSpawnPoint");
+            if (spawnPoint != null)
+            {
+                transform.position = spawnPoint.transform.position;
+            }
+            else
+            {
+                Debug.LogError("No PlayerSpawnPoint or Checkpoint found! Cannot respawn.");
+                return;
+            }
+        }
+        
+        GetComponent<PlayerHealth>().Heal(GetComponent<PlayerHealth>().maxHealth);
+        ResetJumpAndDash();
+    }
+
     public void SetChargingWalkSpeed(bool isCharging)
     {
         if (isCharging)
@@ -150,10 +183,6 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
-        // Debug log to confirm grounded status
-        // Debug.Log("Is Grounded: " + isGrounded + " | Jump Count: " + jumpCount);
-
-
         if (moveInput.x != 0 && !isAttacking)
         {
             bool movingRight = moveInput.x > 0;
@@ -163,7 +192,6 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
-        // Updated animation logic to handle the charging walk
         bool isMoving = Mathf.Abs(moveInput.x) > 0.01f;
         bool isCharging = attackScript.IsCharging();
 
@@ -236,8 +264,8 @@ public class PlayerMovement : MonoBehaviour
         if (comboStep == 1)
         {
             animator.Play("attack1");
-            attackScript.Attack(8f);
-            if (hasCrimsonAegisStrike && crimsonVFX_Attack1_Prefab != null)
+            attackScript.Attack(8f); // Reverted to single damage parameter
+            if (hasCrimsonAegisStrike && crimsonVFX_Attack1_Prefab != null) // Checks PlayerMovement's own flag
             {
                 attackScript.InstantiateAttackVFX(crimsonVFX_Attack1_Prefab);
             }
@@ -246,8 +274,8 @@ public class PlayerMovement : MonoBehaviour
         else if (comboStep == 2)
         {
             animator.Play("attack2");
-            attackScript.Attack(8f);
-            if (hasCrimsonAegisStrike && crimsonVFX_Attack2_Prefab != null)
+            attackScript.Attack(8f); // Reverted to single damage parameter
+            if (hasCrimsonAegisStrike && crimsonVFX_Attack2_Prefab != null) // Checks PlayerMovement's own flag
             {
                 attackScript.InstantiateAttackVFX(crimsonVFX_Attack2_Prefab);
             }
@@ -256,16 +284,16 @@ public class PlayerMovement : MonoBehaviour
         else if (comboStep == 3)
         {
             animator.Play("attack2");
-            attackScript.Attack(15f);
-            if (hasCrimsonAegisStrike && crimsonVFX_Combo_Prefab != null)
+            attackScript.Attack(15f); // Reverted to single damage parameter
+            if (hasCrimsonAegisStrike && crimsonVFX_Combo_Prefab != null) // Checks PlayerMovement's own flag
             {
                 attackScript.InstantiateAttackVFX(crimsonVFX_Combo_Prefab);
             }
             yield return new WaitForSeconds(attack2Duration);
 
             animator.Play("attack1");
-            attackScript.Attack(15f);
-            if (hasCrimsonAegisStrike && crimsonVFX_Combo_Prefab != null)
+            attackScript.Attack(15f); // Reverted to single damage parameter
+            if (hasCrimsonAegisStrike && crimsonVFX_Combo_Prefab != null) // Checks PlayerMovement's own flag
             {
                 attackScript.InstantiateAttackVFX(crimsonVFX_Combo_Prefab);
             }
@@ -305,7 +333,7 @@ public class PlayerMovement : MonoBehaviour
 
     public void ResetAbilities()
     {
-        hasCrimsonAegisStrike = false;
+        hasCrimsonAegisStrike = false; // Flag is reset here
     }
 
     public void ResetJumpAndDash()

@@ -26,7 +26,7 @@ public class LoreTransitionManager : MonoBehaviour
 
     [TextArea(5, 10)]
     public string loreContent = "**As the Firstborn fell**, the void itself trembled. From his shadowed throne, the **Abyssal Lord** unleashed the **Great Corruption**, a tendril of ancient malice spreading across the lands.\n" +
-                                "Even as **Demon Wood** found respite, a chilling power stirred. The **Secondborn**, the **Lich Lord of the Whispering Woods**, twisted the encroaching darkness to a new, necromantic will, binding the very essence of the **Dark Forest**.\n" +
+                                "**Even as Demon Wood** found respite, a chilling power stirred. The **Secondborn**, the **Lich Lord of the Whispering Woods**, twisted the encroaching darkness to a new, necromantic will, binding the very essence of the **Dark Forest**.\n" +
                                 "But from the sacred glades, the radiant **Guardian, Seraphina**, emerged. Sensing your triumph, and the looming shadow, she bestowed upon you a fragment of her divine power – a piercing grace forged in defiance.";
 
     [TextArea(3, 5)]
@@ -139,10 +139,11 @@ public class LoreTransitionManager : MonoBehaviour
         {
             abilityDescriptionText.text = abilityDescriptionContent;
             abilityDescriptionText.gameObject.SetActive(true);
+            // Reverted: Unlocking Crimson Aegis Strike directly on PlayerMovement.Instance
             PlayerMovement playerMovement = FindAnyObjectByType<PlayerMovement>();
             if (playerMovement != null) { playerMovement.hasCrimsonAegisStrike = true; Debug.Log("LoreTransitionManager: Crimson Aegis Strike unlocked on PlayerMovement script!"); }
             else { Debug.LogWarning("LoreTransitionManager: PlayerMovement script not found to unlock ability!"); }
-            Debug.Log("LoreTransitionManager: After unlocking, PlayerMovement.hasCrimsonAegisStrike is: " + (playerMovement != null ? playerMovement.hasCrimsonAegisStrike.ToString() : "N/A")); // ADDED DEBUG
+            Debug.Log("LoreTransitionManager: After unlocking, PlayerMovement.hasCrimsonAegisStrike is: " + (playerMovement != null ? playerMovement.hasCrimsonAegisStrike.ToString() : "N/A")); 
         }
         if (additionalImage1 != null) { additionalImage1.gameObject.SetActive(true); }
         if (additionalImage2 != null) { additionalImage2.gameObject.SetActive(true); }

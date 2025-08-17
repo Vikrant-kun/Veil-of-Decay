@@ -4,7 +4,12 @@ using System.Collections;
 public class EnemyAI : MonoBehaviour
 {
     [Header("Detection & Attack")]
-    public float detectionRange = 8f;
+    // ADDED: Rectangular detection properties
+    public Vector2 detectionBoxSize = new Vector2(8f, 4f); // Width and height of the detection box
+    public Vector2 detectionBoxOffset = Vector2.zero; // Offset from the enemy's pivot
+    // Removed: old 'detectionRange' variable as it's now replaced by box size
+    // public float detectionRange = 8f; 
+    
     public float attackRange = 1.5f;
     public float attackCooldown = 1f;
     public int attackDamage = 10;
@@ -51,12 +56,15 @@ public class EnemyAI : MonoBehaviour
             return;
         }
 
+        // CHANGED: Use the new rectangular detection logic
+        isPlayerDetected = PlayerDetected(); // Check for player within the defined box
+
+        // Original logic relies on horizontal distance, which isn't directly used by PlayerDetected()
+        // but the overall flow based on isPlayerDetected remains
         float horizontalDistance = Mathf.Abs(transform.position.x - playerTarget.position.x);
-        float verticalDistance = Mathf.Abs(transform.position.y - playerTarget.position.y);
 
-        isPlayerDetected = horizontalDistance <= detectionRange;
 
-        if (isPlayerDetected && IsGrounded())
+        if (isPlayerDetected && IsGrounded()) // Changed from horizontalDistance <= detectionRange to isPlayerDetected
         {
             if (horizontalDistance <= attackRange)
             {
@@ -165,6 +173,21 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
+    // ADDED: New method for rectangular player detection
+    bool PlayerDetected()
+    {
+        if (playerTarget == null) return false;
+
+        // Calculate the center of the detection box in world coordinates
+        Vector2 boxCenter = (Vector2)transform.position + detectionBoxOffset;
+
+        // Use OverlapBox to check for player's collider within the rectangular area
+        Collider2D hit = Physics2D.OverlapBox(boxCenter, detectionBoxSize, 0f, playerLayer);
+
+        return hit != null && hit.CompareTag("Player"); // Return true if player's collider is found and tagged "Player"
+    }
+
+
     bool IsGrounded()
     {
         if (groundCheck == null)
@@ -196,6 +219,11 @@ public class EnemyAI : MonoBehaviour
 
     void OnDrawGizmosSelected()
     {
+        // ADDED: Draw the rectangular detection zone
+        Gizmos.color = Color.yellow;
+        Vector2 boxCenter = (Vector2)transform.position + detectionBoxOffset;
+        Gizmos.DrawWireCube(boxCenter, detectionBoxSize);
+
         if (attackPoint != null)
         {
             Gizmos.color = Color.red;

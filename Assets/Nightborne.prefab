@@ -515,7 +515,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd11fa0c0f185496bb68bd7618b69ace, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  detectionRange: 8
+  detectionBoxSize: {x: 21, y: 4}
+  detectionBoxOffset: {x: 0, y: 0}
   attackRange: 1.5
   attackCooldown: 1
   attackDamage: 10

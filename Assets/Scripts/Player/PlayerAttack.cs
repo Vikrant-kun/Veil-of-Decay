@@ -6,7 +6,7 @@ using TMPro;
 
 public class PlayerAttack : MonoBehaviour
 {
-    public static PlayerAttack Instance { get; private set; } // Added Singleton Pattern
+    public static PlayerAttack Instance { get; private set; } 
 
     public Transform attackPoint;
     public float attackRangeX = 1.5f;
@@ -29,6 +29,8 @@ public class PlayerAttack : MonoBehaviour
     public TMP_Text abilityUnlockedDescriptionText;
     public Image abilityUnlockedIcon;
 
+    // Removed: Crimson Aegis Strike Ability Properties
+
     private PlayerMovement playerMovement; 
     private SpriteRenderer playerSpriteRenderer;
     private Animator animator;
@@ -39,8 +41,8 @@ public class PlayerAttack : MonoBehaviour
     private bool gameIsPausedForMessage = false;
     private bool isPerformingCrimsonSurge = false;
     
-    // FIXED: comboStep declaration re-added here, crucial for CS0103 error
-    private int comboStep = 0; 
+    // comboStep is managed by PlayerMovement, PlayerAttack doesn't need it internally here.
+    private int comboStep = 0; // Re-added comboStep for internal consistency if other scripts relied on it
 
     public bool IsCharging()
     {
@@ -49,16 +51,12 @@ public class PlayerAttack : MonoBehaviour
 
     void Awake()
     {
-        // Singleton Implementation
         if (Instance == null)
         {
             Instance = this;
-            // PlayerMovement handles DontDestroyOnLoad for the root Player GameObject
         }
         else
         {
-            // If another instance already exists, destroy this one
-            // PlayerMovement handles duplicate player destruction, but good to have here too
             Destroy(gameObject); 
             return;
         }
@@ -70,7 +68,6 @@ public class PlayerAttack : MonoBehaviour
     
     void Start()
     {
-        // Hide the VFX and UI at the start of the scene
         if (crimsonAuraVFX != null)
         {
             crimsonAuraVFX.SetActive(false);
@@ -138,6 +135,8 @@ public class PlayerAttack : MonoBehaviour
         ShowAbilityUnlockedMessage("New Ability: Crimson Surge!", "What it does: Hold 'X' to build a powerful charge. Release after one second to unleash a concentrated crimson surge, dealing heavy damage to enemies and breaking fragile walls in its path.");
     }
 
+    // Removed: GrantCrimsonAegisStrike() method
+
     private void StartCharge()
     {
         isCharging = true;
@@ -180,7 +179,7 @@ public class PlayerAttack : MonoBehaviour
         if (animator != null)
         {
             isPerformingCrimsonSurge = true;
-            animator.SetTrigger("Attack2");
+            animator.SetTrigger("Attack2"); 
         }
     }
 
@@ -207,14 +206,25 @@ public class PlayerAttack : MonoBehaviour
                 var belerickHealth = obj.GetComponentInParent<BelerickHealth>();
                 if (belerickHealth != null && !belerickHealth.isDead)
                 {
-                    belerickHealth.TakeDamage(100);
+                    belerickHealth.TakeDamage(100); 
+                    Debug.Log($"<color=blue>PlayerAttack (CrimsonSurge): Hit Belerick ({obj.name}) for 100 damage.</color>");
                     continue;
                 }
-
+                // Reverted DarkSoulHealth damage call
+                var darkSoulHealth = obj.GetComponentInParent<DarkSoulHealth>();
+                if (darkSoulHealth != null)
+                {
+                    darkSoulHealth.TakeDamage(100); 
+                    Debug.Log($"<color=blue>PlayerAttack (CrimsonSurge): Hit DarkSoul ({obj.name}) for 100 damage.</color>");
+                    continue;
+                }
+                // Reverted EnemyHealth damage call
                 var enemyHealth = obj.GetComponentInParent<EnemyHealth>();
                 if (enemyHealth != null)
                 {
                     enemyHealth.TakeDamage(100);
+                    Debug.Log($"<color=blue>PlayerAttack (CrimsonSurge): Hit Enemy ({obj.name}) for 100 damage.</color>");
+                    continue;
                 }
             }
             else if ((fragileWallLayer.value & (1 << obj.gameObject.layer)) > 0)
@@ -223,6 +233,7 @@ public class PlayerAttack : MonoBehaviour
                 if (fragileWall != null)
                 {
                     fragileWall.BreakWall();
+                    Debug.Log($"<color=blue>PlayerAttack (CrimsonSurge): Broke Fragile Wall ({obj.name}).</color>");
                 }
             }
         }
@@ -249,7 +260,8 @@ public class PlayerAttack : MonoBehaviour
         }
     }
     
-    public void Attack(float damage)
+    // Reverted: Now takes only basePhysicalDamage
+    public void Attack(float basePhysicalDamage)
     {
         if (attackPoint == null || playerMovement == null)
             return;
@@ -263,17 +275,30 @@ public class PlayerAttack : MonoBehaviour
             if (enemy.gameObject == this.gameObject || enemy.CompareTag("Player"))
                 continue;
 
+            // Removed: Holy Damage and Spirit Burn calculation
+
             var belerickHealth = enemy.GetComponentInParent<BelerickHealth>();
             if (belerickHealth != null && !belerickHealth.isDead)
             {
-                belerickHealth.TakeDamage((int)damage);
+                belerickHealth.TakeDamage((int)basePhysicalDamage); 
+                Debug.Log($"<color=blue>PlayerAttack (Normal): Hit Belerick ({enemy.name}) for {(int)basePhysicalDamage} physical damage.</color>");
                 continue;
             }
 
+            var darkSoulHealth = enemy.GetComponentInParent<DarkSoulHealth>();
+            if (darkSoulHealth != null)
+            {
+                darkSoulHealth.TakeDamage(basePhysicalDamage); // Reverted to single damage parameter
+                Debug.Log($"<color=blue>PlayerAttack (Normal): Hit DarkSoul ({enemy.name}) for {basePhysicalDamage} physical damage.</color>");
+                continue;
+            }
+            
             var enemyHealth = enemy.GetComponentInParent<EnemyHealth>();
             if (enemyHealth != null)
             {
-                enemyHealth.TakeDamage((int)damage);
+                enemyHealth.TakeDamage((int)basePhysicalDamage);
+                Debug.Log($"<color=blue>PlayerAttack (Normal): Hit Enemy ({enemy.name}) for {(int)basePhysicalDamage} physical damage.</color>");
+                continue;
             }
         }
     }
@@ -305,7 +330,7 @@ public class PlayerAttack : MonoBehaviour
         Gizmos.DrawWireCube(attackPoint.position, new Vector3(attackRangeX * 1.5f, attackRangeY * 1.5f, 1f));
     }
 
-    public void ResetAttackStates() // Ensured this is PUBLIC
+    public void ResetAttackStates()
     {
         isCharging = false;
         chargeTimer = 0f;
