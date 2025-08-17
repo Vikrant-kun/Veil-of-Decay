@@ -26,7 +26,8 @@ public class PlayerMovement : MonoBehaviour
     public float jumpForce = 12f;
     public Transform groundCheck;
     public float groundCheckRadius = 0.2f;
-    public LayerMask groundLayer;
+    [Tooltip("Select all layers that the player can jump from, including ground and moving platforms.")]
+    public LayerMask groundLayer; // Added tooltip for clarity
     private bool isGrounded = false;
     public int maxJumps = 2;
     private int jumpCount = 0;
@@ -148,6 +149,10 @@ public class PlayerMovement : MonoBehaviour
                 canDash = true;
             }
         }
+
+        // Debug log to confirm grounded status
+        // Debug.Log("Is Grounded: " + isGrounded + " | Jump Count: " + jumpCount);
+
 
         if (moveInput.x != 0 && !isAttacking)
         {

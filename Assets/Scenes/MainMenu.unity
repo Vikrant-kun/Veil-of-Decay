@@ -853,7 +853,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d9ad4faff6444e54997792266e3a7b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gameSceneName: FirstLevel
+  gameSceneName: IntroScene
 --- !u!4 &1262262403
 Transform:
   m_ObjectHideFlags: 0

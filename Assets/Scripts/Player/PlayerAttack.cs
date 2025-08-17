@@ -1,15 +1,19 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
-using UnityEngine.SceneManagement;
+using UnityEngine.SceneManagement; 
 using TMPro;
 
 public class PlayerAttack : MonoBehaviour
 {
+    public static PlayerAttack Instance { get; private set; } // Added Singleton Pattern
+
     public Transform attackPoint;
     public float attackRangeX = 1.5f;
     public float attackRangeY = 1f;
     public LayerMask enemyLayer;
+    public LayerMask fragileWallLayer; 
+
     public Transform attackVFXSpawnPoint;
     public GameObject crimsonSlashVFX1Prefab;
     public GameObject crimsonSlashVFX2Prefab;
@@ -17,15 +21,15 @@ public class PlayerAttack : MonoBehaviour
     public GameObject crimsonSurgeVFXPrefab;
     public GameObject crimsonAuraVFX;
 
-    // UI elements are now private and will be set by the new UI script
-    private GameObject chargeUIPanel;
-    private Slider chargeUIFillBar;
-    private GameObject abilityUnlockedUIPanel;
-    private TMP_Text abilityUnlockedTitleText;
-    private TMP_Text abilityUnlockedDescriptionText;
-    private Image abilityUnlockedIcon;
+    // UI elements are now PUBLIC so they can be assigned in the Inspector
+    public GameObject chargeUIPanel;
+    public Slider chargeUIFillBar;
+    public GameObject abilityUnlockedUIPanel;
+    public TMP_Text abilityUnlockedTitleText;
+    public TMP_Text abilityUnlockedDescriptionText;
+    public Image abilityUnlockedIcon;
 
-    private PlayerMovement playerMovement;
+    private PlayerMovement playerMovement; 
     private SpriteRenderer playerSpriteRenderer;
     private Animator animator;
     private bool hasCrimsonSurge = false;
@@ -34,31 +38,31 @@ public class PlayerAttack : MonoBehaviour
     private float requiredChargeTime = 1f;
     private bool gameIsPausedForMessage = false;
     private bool isPerformingCrimsonSurge = false;
+    
+    // FIXED: comboStep declaration re-added here, crucial for CS0103 error
+    private int comboStep = 0; 
 
-    // Public method to check if the player is currently charging
     public bool IsCharging()
     {
         return isCharging;
     }
-    
-    // New method for the UI panel to register its components
-    public void RegisterUI(GameObject chargePanel, Slider chargeBar, GameObject unlockedPanel, TMP_Text titleText, TMP_Text descText, Image icon)
-    {
-        this.chargeUIPanel = chargePanel;
-        this.chargeUIFillBar = chargeBar;
-        this.abilityUnlockedUIPanel = unlockedPanel;
-        this.abilityUnlockedTitleText = titleText;
-        this.abilityUnlockedDescriptionText = descText;
-        this.abilityUnlockedIcon = icon;
-
-        // Make sure the UI starts in the correct state
-        if (this.chargeUIPanel != null) this.chargeUIPanel.SetActive(false);
-        if (this.abilityUnlockedUIPanel != null) this.abilityUnlockedUIPanel.SetActive(false);
-    }
-
 
     void Awake()
     {
+        // Singleton Implementation
+        if (Instance == null)
+        {
+            Instance = this;
+            // PlayerMovement handles DontDestroyOnLoad for the root Player GameObject
+        }
+        else
+        {
+            // If another instance already exists, destroy this one
+            // PlayerMovement handles duplicate player destruction, but good to have here too
+            Destroy(gameObject); 
+            return;
+        }
+
         playerMovement = GetComponent<PlayerMovement>();
         playerSpriteRenderer = GetComponent<SpriteRenderer>();
         animator = GetComponent<Animator>();
@@ -66,11 +70,18 @@ public class PlayerAttack : MonoBehaviour
     
     void Start()
     {
-        // This will find the aura VFX which is also in the scene, just like the UI
-        crimsonAuraVFX = GameObject.Find("CrimsonAuraVFX");
+        // Hide the VFX and UI at the start of the scene
         if (crimsonAuraVFX != null)
         {
             crimsonAuraVFX.SetActive(false);
+        }
+        if (chargeUIPanel != null)
+        {
+            chargeUIPanel.SetActive(false);
+        }
+        if (abilityUnlockedUIPanel != null)
+        {
+            abilityUnlockedUIPanel.SetActive(false);
         }
     }
 
@@ -183,24 +194,36 @@ public class PlayerAttack : MonoBehaviour
 
         Vector2 center = attackPoint.position;
         Vector2 size = new Vector2(attackRangeX * 1.5f, attackRangeY * 1.5f);
-        Collider2D[] hitEnemies = Physics2D.OverlapBoxAll(center, size, 0f, enemyLayer);
+        
+        Collider2D[] hitObjects = Physics2D.OverlapBoxAll(center, size, 0f, enemyLayer | fragileWallLayer);
 
-        foreach (var enemy in hitEnemies)
+        foreach (var obj in hitObjects)
         {
-            if (enemy.gameObject == this.gameObject || enemy.CompareTag("Player"))
-                continue;
-
-            var belerickHealth = enemy.GetComponentInParent<BelerickHealth>();
-            if (belerickHealth != null && !belerickHealth.isDead)
+            if ((enemyLayer.value & (1 << obj.gameObject.layer)) > 0)
             {
-                belerickHealth.TakeDamage(100);
-                continue;
+                if (obj.gameObject == this.gameObject || obj.CompareTag("Player"))
+                    continue;
+
+                var belerickHealth = obj.GetComponentInParent<BelerickHealth>();
+                if (belerickHealth != null && !belerickHealth.isDead)
+                {
+                    belerickHealth.TakeDamage(100);
+                    continue;
+                }
+
+                var enemyHealth = obj.GetComponentInParent<EnemyHealth>();
+                if (enemyHealth != null)
+                {
+                    enemyHealth.TakeDamage(100);
+                }
             }
-
-            var enemyHealth = enemy.GetComponentInParent<EnemyHealth>();
-            if (enemyHealth != null)
+            else if ((fragileWallLayer.value & (1 << obj.gameObject.layer)) > 0)
             {
-                enemyHealth.TakeDamage(100);
+                var fragileWall = obj.GetComponent<FragileWall>();
+                if (fragileWall != null)
+                {
+                    fragileWall.BreakWall();
+                }
             }
         }
         
@@ -280,5 +303,19 @@ public class PlayerAttack : MonoBehaviour
         Gizmos.DrawWireCube(attackPoint.position, new Vector3(attackRangeX, attackRangeY, 1f));
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireCube(attackPoint.position, new Vector3(attackRangeX * 1.5f, attackRangeY * 1.5f, 1f));
+    }
+
+    public void ResetAttackStates() // Ensured this is PUBLIC
+    {
+        isCharging = false;
+        chargeTimer = 0f;
+        isPerformingCrimsonSurge = false;
+        comboStep = 0; // Reset combo to start from attack1
+        gameIsPausedForMessage = false; 
+        
+        if (playerMovement != null) playerMovement.SetChargingWalkSpeed(false);
+        if (crimsonAuraVFX != null) crimsonAuraVFX.SetActive(false);
+        if (chargeUIPanel != null) chargeUIPanel.SetActive(false);
+        if (abilityUnlockedUIPanel != null) abilityUnlockedUIPanel.SetActive(false);
     }
 }

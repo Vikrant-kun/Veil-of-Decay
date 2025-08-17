@@ -41,6 +41,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "SaveCheckpoint",
+                    "type": "Button",
+                    "id": "99b706e7-30e3-40c2-b9b9-4df8d662be7c",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -118,6 +127,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Jump",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b73c3567-d63c-44fd-b3ac-f3a558ddff3d",
+                    "path": "<Keyboard>/r",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SaveCheckpoint",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

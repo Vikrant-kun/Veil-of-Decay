@@ -6,20 +6,21 @@ TagManager:
   tags:
   - Enemy
   - Hazard
+  - 'DeathScreenUI '
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - 'DeathScreenUI '
   - Water
   - UI
-  - 
+  - FragileWall
   - Enemy
   - Ground
   - Player
   - PostProcessing
   - Background
-  - 
+  - Platform
   - 
   - 
   - 
