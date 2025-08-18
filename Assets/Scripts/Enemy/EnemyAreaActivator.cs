@@ -6,7 +6,8 @@ public class EnemyAreaActivator : MonoBehaviour
     [Header("Enemies to Activate")]
     [Tooltip("Drag all DarkSoul enemies that belong to this area here.")]
     public List<DarkSoul> darkSoulsInArea = new List<DarkSoul>();
-    // Removed: nightbornesInArea List
+    [Tooltip("Drag all Ghost enemies that belong to this area here.")]
+    public List<GhostAI> ghostsInArea = new List<GhostAI>(); // Added for GhostAI
 
     [Header("Activation Settings")]
     [Tooltip("If true, this area will activate enemies only once per play session (until player respawns).")]
@@ -19,10 +20,15 @@ public class EnemyAreaActivator : MonoBehaviour
         if (zoneCollider == null)
         {
             Debug.LogError("EnemyAreaActivator: No Collider2D found on " + gameObject.name + ". A trigger collider is required!", this);
+            enabled = false; // Disable script if no collider to prevent further errors
         }
-        if (!zoneCollider.isTrigger)
+        else
         {
-            Debug.LogWarning("EnemyAreaActivator: Collider on " + gameObject.name + " is not set to Is Trigger. It should be a trigger!", this);
+            if (!zoneCollider.isTrigger)
+            {
+                Debug.LogWarning("EnemyAreaActivator: Collider on " + gameObject.name + " is not set to Is Trigger. It should be a trigger!", this);
+            }
+            Debug.Log($"EnemyAreaActivator: Awake on {gameObject.name}. Collider found: {zoneCollider.GetType().Name}, IsTrigger: {zoneCollider.isTrigger}", this);
         }
     }
 
@@ -31,7 +37,7 @@ public class EnemyAreaActivator : MonoBehaviour
         if (other.CompareTag("Player") && (!hasActivatedThisSession || !activateOnce))
         {
             Debug.Log($"EnemyAreaActivator: Player entered {gameObject.name}. Activating enemies.");
-            ActivateEnemies();
+            ActivateEnemies(other.transform); // Pass player transform directly
             if (activateOnce)
             {
                 hasActivatedThisSession = true; 
@@ -39,27 +45,55 @@ public class EnemyAreaActivator : MonoBehaviour
         }
     }
 
-    void ActivateEnemies()
+    void ActivateEnemies(Transform playerTransform) // Now takes playerTransform as argument
     {
+        // Activate DarkSoul enemies
         foreach (DarkSoul darkSoul in darkSoulsInArea)
         {
             if (darkSoul != null)
             {
-                // Accessing DarkSoulHealth to check IsDead property
                 DarkSoulHealth darkSoulHealth = darkSoul.GetComponent<DarkSoulHealth>();
                 if (darkSoulHealth != null && !darkSoulHealth.IsDead) // Only activate if not already dead
                 {
                     darkSoul.gameObject.SetActive(true); 
                     darkSoul.enabled = true; // Enable DarkSoul AI script
-                    if (GameRestartManager.Instance != null && GameRestartManager.Instance.currentPlayerTransform != null)
-                    {
-                        darkSoul.SetPlayerTarget(GameRestartManager.Instance.currentPlayerTransform);
-                    }
+                    darkSoul.SetPlayerTarget(playerTransform); // Set player target
+                    Debug.Log($"EnemyAreaActivator: Activated Dark Soul: {darkSoul.name}");
+                } else if (darkSoulHealth != null && darkSoulHealth.IsDead) {
+                    Debug.Log($"EnemyAreaActivator: Dark Soul {darkSoul.name} is already dead, skipping activation.");
+                } else {
+                     Debug.LogWarning($"EnemyAreaActivator: DarkSoul '{darkSoul.name}' is missing DarkSoulHealth component. Cannot check IsDead state.", darkSoul);
                 }
+            }
+             else
+            {
+                Debug.LogWarning($"EnemyAreaActivator: Null reference in 'darkSoulsInArea' list for {gameObject.name}.", this);
             }
         }
 
-        // Removed: foreach loop for nightbornesInArea
+        // Activate GhostAI enemies
+        foreach (GhostAI ghost in ghostsInArea)
+        {
+            if (ghost != null)
+            {
+                GhostHealth ghostHealth = ghost.GetComponent<GhostHealth>(); // Assuming GhostHealth script
+                if (ghostHealth != null && !ghostHealth.IsDead) // Only activate if not already dead
+                {
+                    ghost.gameObject.SetActive(true);
+                    ghost.enabled = true; // Enable GhostAI script
+                    ghost.SetPlayerTarget(playerTransform); // Set player target
+                    Debug.Log($"EnemyAreaActivator: Activated Ghost: {ghost.name}");
+                } else if (ghostHealth != null && ghostHealth.IsDead) {
+                    Debug.Log($"EnemyAreaActivator: Ghost {ghost.name} is already dead, skipping activation.");
+                } else {
+                     Debug.LogWarning($"EnemyAreaActivator: Ghost '{ghost.name}' is missing GhostHealth component. Cannot check IsDead state.", ghost);
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"EnemyAreaActivator: Null reference in 'ghostsInArea' list for {gameObject.name}.", this);
+            }
+        }
     }
 
     public void ResetActivator()
@@ -67,21 +101,35 @@ public class EnemyAreaActivator : MonoBehaviour
         Debug.Log($"EnemyAreaActivator: Resetting activator for {gameObject.name}.");
         hasActivatedThisSession = false;
 
+        // Reset DarkSoul enemies
         foreach (DarkSoul darkSoul in darkSoulsInArea)
         {
             if (darkSoul != null)
             {
-                // Accessing DarkSoulHealth to reset enemy state
                 DarkSoulHealth darkSoulHealth = darkSoul.GetComponent<DarkSoulHealth>();
                 if (darkSoulHealth != null)
                 {
                     darkSoulHealth.ResetEnemyState(); // Resets health, re-enables collider, etc.
                 }
                 darkSoul.enabled = false; // Keep AI script disabled until activated again
+                darkSoul.gameObject.SetActive(false); // Ensure the GameObject is off for re-activation
             }
         }
 
-        // Removed: foreach loop for nightbornesInArea reset
+        // Reset GhostAI enemies
+        foreach (GhostAI ghost in ghostsInArea)
+        {
+            if (ghost != null)
+            {
+                GhostHealth ghostHealth = ghost.GetComponent<GhostHealth>(); // Assuming GhostHealth script
+                if (ghostHealth != null)
+                {
+                    ghostHealth.ResetEnemyState(); // Resets health, re-enables collider, etc.
+                }
+                ghost.enabled = false; // Keep AI script disabled until activated again
+                ghost.gameObject.SetActive(false); // Ensure the GameObject is off for re-activation
+            }
+        }
     }
 
     void OnDrawGizmos()

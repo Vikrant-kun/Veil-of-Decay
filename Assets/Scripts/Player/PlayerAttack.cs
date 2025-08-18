@@ -29,8 +29,6 @@ public class PlayerAttack : MonoBehaviour
     public TMP_Text abilityUnlockedDescriptionText;
     public Image abilityUnlockedIcon;
 
-    // Removed: Crimson Aegis Strike Ability Properties
-
     private PlayerMovement playerMovement; 
     private SpriteRenderer playerSpriteRenderer;
     private Animator animator;
@@ -135,8 +133,6 @@ public class PlayerAttack : MonoBehaviour
         ShowAbilityUnlockedMessage("New Ability: Crimson Surge!", "What it does: Hold 'X' to build a powerful charge. Release after one second to unleash a concentrated crimson surge, dealing heavy damage to enemies and breaking fragile walls in its path.");
     }
 
-    // Removed: GrantCrimsonAegisStrike() method
-
     private void StartCharge()
     {
         isCharging = true;
@@ -210,7 +206,6 @@ public class PlayerAttack : MonoBehaviour
                     Debug.Log($"<color=blue>PlayerAttack (CrimsonSurge): Hit Belerick ({obj.name}) for 100 damage.</color>");
                     continue;
                 }
-                // Reverted DarkSoulHealth damage call
                 var darkSoulHealth = obj.GetComponentInParent<DarkSoulHealth>();
                 if (darkSoulHealth != null)
                 {
@@ -218,7 +213,15 @@ public class PlayerAttack : MonoBehaviour
                     Debug.Log($"<color=blue>PlayerAttack (CrimsonSurge): Hit DarkSoul ({obj.name}) for 100 damage.</color>");
                     continue;
                 }
-                // Reverted EnemyHealth damage call
+                // --- ADDED GHOSTHEALTH HERE ---
+                var ghostHealth = obj.GetComponentInParent<GhostHealth>();
+                if (ghostHealth != null)
+                {
+                    ghostHealth.TakeDamage(100);
+                    Debug.Log($"<color=blue>PlayerAttack (CrimsonSurge): Hit Ghost ({obj.name}) for 100 damage.</color>");
+                    continue;
+                }
+                // --- END ADDED GHOSTHEALTH ---
                 var enemyHealth = obj.GetComponentInParent<EnemyHealth>();
                 if (enemyHealth != null)
                 {
@@ -260,7 +263,6 @@ public class PlayerAttack : MonoBehaviour
         }
     }
     
-    // Reverted: Now takes only basePhysicalDamage
     public void Attack(float basePhysicalDamage)
     {
         if (attackPoint == null || playerMovement == null)
@@ -275,8 +277,6 @@ public class PlayerAttack : MonoBehaviour
             if (enemy.gameObject == this.gameObject || enemy.CompareTag("Player"))
                 continue;
 
-            // Removed: Holy Damage and Spirit Burn calculation
-
             var belerickHealth = enemy.GetComponentInParent<BelerickHealth>();
             if (belerickHealth != null && !belerickHealth.isDead)
             {
@@ -288,11 +288,19 @@ public class PlayerAttack : MonoBehaviour
             var darkSoulHealth = enemy.GetComponentInParent<DarkSoulHealth>();
             if (darkSoulHealth != null)
             {
-                darkSoulHealth.TakeDamage(basePhysicalDamage); // Reverted to single damage parameter
+                darkSoulHealth.TakeDamage(basePhysicalDamage); 
                 Debug.Log($"<color=blue>PlayerAttack (Normal): Hit DarkSoul ({enemy.name}) for {basePhysicalDamage} physical damage.</color>");
                 continue;
             }
-            
+            // --- ADDED GHOSTHEALTH HERE ---
+            var ghostHealth = enemy.GetComponentInParent<GhostHealth>();
+            if (ghostHealth != null)
+            {
+                ghostHealth.TakeDamage(basePhysicalDamage);
+                Debug.Log($"<color=blue>PlayerAttack (Normal): Hit Ghost ({enemy.name}) for {basePhysicalDamage} physical damage.</color>");
+                continue;
+            }
+            // --- END ADDED GHOSTHEALTH ---
             var enemyHealth = enemy.GetComponentInParent<EnemyHealth>();
             if (enemyHealth != null)
             {

@@ -211,7 +211,7 @@ public class PlayerHealth : MonoBehaviour
 
         sr.color = Color.white;
         animator.Rebind();
-        animator.Play("idle");
+        animator.Play("Idle");
     }
 
     private float GetAnimationClipLength(string clipName)
@@ -227,4 +227,28 @@ public class PlayerHealth : MonoBehaviour
     }
 
     public bool IsDead() => isDead;
+
+    public void ResetStateAndMove(Vector3 spawnPoint)
+    {
+        gameObject.SetActive(true);
+
+        currentHealth = maxHealth;
+        isDead = false;
+
+        Rigidbody2D rb = GetComponent<Rigidbody2D>();
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
+            rb.angularVelocity = 0f;
+        }
+
+        transform.position = spawnPoint;
+
+        Animator playerAnimator = GetComponent<Animator>();
+        if (playerAnimator != null)
+        {
+            playerAnimator.Rebind();
+            playerAnimator.Play("Idle");
+        }
+    }
 }

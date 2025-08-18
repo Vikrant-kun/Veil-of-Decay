@@ -1,33 +1,28 @@
 using UnityEngine;
 using System.Collections;
-using System.Collections.Generic; // Required for List
 
 public class DarkSoul : MonoBehaviour
 {
     public enum State { Patrol, Chase, Attack, Return }
     private State state;
 
-    [Header("Player")]
     public Transform player;
     public string playerTag = "Player";
 
-    [Header("Detection")]
-    public Vector2 detectionBoxSize = new Vector2(10f, 5f); // Size of the detection rectangle (width, height)
-    public Vector2 detectionBoxOffset = Vector2.zero; // Offset from enemy's pivot
+    public Vector2 detectionBoxSize = new Vector2(10f, 5f);
+    public Vector2 detectionBoxOffset = Vector2.zero;
     public bool requireLineOfSight = true;
-    public LayerMask losBlockers; // Anything that blocks vision (e.g., walls, obstacles)
-    public LayerMask playerDetectionLayer; // Layer specifically for player detection in OverlapBox
+    public LayerMask losBlockers;
+    public LayerMask playerDetectionLayer;
 
-    [Header("Attack")]
     public float attackRange = 1.4f;
     public float attackWindup = 0.12f;
     public float attackCooldown = 0.8f;
     public int attackDamage = 10;
     public Transform attackPoint;
     public float attackRadius = 0.9f;
-    public LayerMask playerLayer; // Layer for player's actual collider
+    public LayerMask playerLayer;
 
-    [Header("Movement")]
     public float patrolSpeed = 2f;
     public float chaseSpeed = 3.8f;
     public Transform leftPoint;
@@ -37,18 +32,14 @@ public class DarkSoul : MonoBehaviour
     public Transform groundCheck;
     public LayerMask groundLayer;
 
-    // Animator parameter names (these should match your Animator Controller parameters)
-    [Header("Animator Params")]
-    public string animParamIsWalking = "isWalking"; // Bool parameter for walking/idle
-    public string animParamAttackTrigger = "Attack"; // Trigger parameter for attack
-    public string animParamDeathTrigger = "Death"; // Trigger parameter for death (if DarkSoul has health script)
-
-    // Removed: isCorruptedFoe
+    public string animParamIsWalking = "isWalking";
+    public string animParamAttackTrigger = "Attack";
+    public string animParamDeathTrigger = "Death";
 
     private Rigidbody2D rb;
     private Animator animator;
     private SpriteRenderer sr;
-    private DarkSoulHealth darkSoulHealth; // Reference to DarkSoulHealth
+    private DarkSoulHealth darkSoulHealth;
 
     private Transform patrolTarget;
     private bool isAttacking;
@@ -61,13 +52,12 @@ public class DarkSoul : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
         sr = GetComponent<SpriteRenderer>();
-        darkSoulHealth = GetComponent<DarkSoulHealth>(); // Get DarkSoulHealth component
+        darkSoulHealth = GetComponent<DarkSoulHealth>();
     }
 
     public void SetPlayerTarget(Transform target)
     {
         player = target;
-        Debug.Log($"DarkSoul: Player target set to {player.name}.");
     }
 
     void Start()
@@ -75,15 +65,7 @@ public class DarkSoul : MonoBehaviour
         if (player == null)
         {
             var p = GameObject.FindGameObjectWithTag(playerTag);
-            if (p != null)
-            {
-                player = p.transform;
-                Debug.Log($"DarkSoul: Player found by tag in Start: {player.name}.");
-            }
-            else
-            {
-                Debug.LogWarning("DarkSoul: Player not found by tag in Start. Ensure player is tagged 'Player' and exists in scene.", this);
-            }
+            if (p != null) player = p.transform;
         }
 
         if (leftPoint == null || rightPoint == null)
@@ -94,36 +76,36 @@ public class DarkSoul : MonoBehaviour
             r.transform.position = transform.position + Vector3.right * 2f;
             leftPoint = l.transform;
             rightPoint = r.transform;
-            l.transform.parent = transform.parent; 
+            l.transform.parent = transform.parent;
             r.transform.parent = transform.parent;
         }
 
         patrolTarget = leftPoint;
         state = State.Patrol;
-        SetAnimIdle(); 
+        SetAnimIdle();
     }
 
     void Update()
     {
         if (darkSoulHealth != null && darkSoulHealth.IsDead)
         {
-            SetVelX(0f); 
-            return; 
+            SetVelX(0f);
+            return;
         }
 
         if (player == null)
         {
-            SetVelX(0f); 
-            SetAnimIdle(); 
+            SetVelX(0f);
+            SetAnimIdle();
             return;
         }
 
         switch (state)
         {
-            case State.Patrol:  TickPatrol();  break;
-            case State.Chase:   TickChase();   break;
-            case State.Attack:  break;
-            case State.Return:  TickReturn();  break;
+            case State.Patrol: TickPatrol(); break;
+            case State.Chase: TickChase(); break;
+            case State.Attack: break;
+            case State.Return: TickReturn(); break;
         }
 
         HandleFlip();
@@ -142,12 +124,12 @@ public class DarkSoul : MonoBehaviour
         {
             float dir = Mathf.Sign(patrolTarget.position.x - transform.position.x);
             SetVelX(dir * patrolSpeed);
-            SetAnimRun(); 
+            SetAnimRun();
         }
         else
         {
             SetVelX(0f);
-            SetAnimIdle(); 
+            SetAnimIdle();
             pauseTimer += Time.deltaTime;
             if (pauseTimer >= patrolPauseTime)
             {
@@ -156,7 +138,7 @@ public class DarkSoul : MonoBehaviour
             }
         }
 
-        if (PlayerDetected()) 
+        if (PlayerDetected())
         {
             state = State.Chase;
             lostSightTimer = 0f;
@@ -174,7 +156,7 @@ public class DarkSoul : MonoBehaviour
 
         float dx = player.position.x - transform.position.x;
         SetVelX(Mathf.Sign(dx) * chaseSpeed);
-        SetAnimRun(); 
+        SetAnimRun();
 
         if (!isAttacking && InAttackRange() && (HasLOS() || !requireLineOfSight))
         {
@@ -182,7 +164,7 @@ public class DarkSoul : MonoBehaviour
             return;
         }
 
-        if (!PlayerDetected()) 
+        if (!PlayerDetected())
         {
             lostSightTimer += Time.deltaTime;
             if (lostSightTimer > 1.25f)
@@ -210,17 +192,17 @@ public class DarkSoul : MonoBehaviour
         {
             float dir = Mathf.Sign(patrolTarget.position.x - transform.position.x);
             SetVelX(dir * patrolSpeed);
-            SetAnimRun(); 
+            SetAnimRun();
         }
         else
         {
             SetVelX(0f);
-            SetAnimIdle(); 
+            SetAnimIdle();
             state = State.Patrol;
             pauseTimer = 0f;
         }
 
-        if (PlayerDetected()) 
+        if (PlayerDetected())
         {
             state = State.Chase;
             lostSightTimer = 0f;
@@ -232,9 +214,9 @@ public class DarkSoul : MonoBehaviour
         state = State.Attack;
         isAttacking = true;
         SetVelX(0f);
-        SetAnimAttack(); 
+        SetAnimAttack();
 
-        yield return new WaitForSeconds(attackWindup); 
+        yield return new WaitForSeconds(attackWindup);
 
         if (attackPoint != null)
         {
@@ -246,11 +228,10 @@ public class DarkSoul : MonoBehaviour
             }
         }
 
-        yield return new WaitForSeconds(attackCooldown - attackWindup); 
+        yield return new WaitForSeconds(attackCooldown - attackWindup);
         isAttacking = false;
-
         state = PlayerDetected() ? State.Chase : State.Return;
-        if (state == State.Return) 
+        if (state == State.Return)
         {
             patrolTarget = (Mathf.Abs(transform.position.x - leftPoint.position.x) <
                             Mathf.Abs(transform.position.x - rightPoint.position.x))
@@ -260,26 +241,20 @@ public class DarkSoul : MonoBehaviour
 
     void SetVelX(float x)
     {
-        rb.linearVelocity = new Vector2(x, rb.linearVelocity.y);
+        if (rb != null) rb.linearVelocity = new Vector2(x, rb.linearVelocity.y);
     }
 
     bool PlayerDetected()
     {
         if (player == null) return false;
-
         Vector2 boxCenter = (Vector2)transform.position + detectionBoxOffset;
-
         Collider2D hit = Physics2D.OverlapBox(boxCenter, detectionBoxSize, 0f, playerDetectionLayer);
-
         if (hit != null && hit.CompareTag("Player"))
         {
-            if (requireLineOfSight)
-            {
-                return HasLOS();
-            }
-            return true; 
+            if (requireLineOfSight) return HasLOS();
+            return true;
         }
-        return false; 
+        return false;
     }
 
     bool InAttackRange()
@@ -289,18 +264,18 @@ public class DarkSoul : MonoBehaviour
 
     bool HasLOS()
     {
+        if (player == null) return false;
         Vector2 from = transform.position;
         Vector2 to = player.position;
         Vector2 dir = (to - from).normalized;
         float dist = Vector2.Distance(from, to);
-
         var hit = Physics2D.Raycast(from, dir, dist, losBlockers);
-        return hit.collider == null; 
+        return hit.collider == null;
     }
 
     bool IsGrounded()
     {
-        if (groundCheck == null) return true; 
+        if (groundCheck == null) return true;
         return Physics2D.OverlapCircle(groundCheck.position, 0.1f, groundLayer);
     }
 
@@ -309,57 +284,37 @@ public class DarkSoul : MonoBehaviour
         if (animator != null)
         {
             animator.SetBool(animParamIsWalking, false);
-            animator.ResetTrigger(animParamAttackTrigger); 
+            animator.ResetTrigger(animParamAttackTrigger);
         }
     }
 
     void SetAnimRun()
     {
-        if (animator != null)
-        {
-            animator.SetBool(animParamIsWalking, true);
-        }
+        if (animator != null) animator.SetBool(animParamIsWalking, true);
     }
 
     void SetAnimAttack()
     {
-        if (animator != null)
-        {
-            animator.SetTrigger(animParamAttackTrigger);
-        }
+        if (animator != null) animator.SetTrigger(animParamAttackTrigger);
     }
 
     void HandleFlip()
     {
-        if (sr == null || player == null) return; 
+        if (sr == null || player == null) return;
+        bool currentlyFacingRight = !sr.flipX;
+        bool intendsToFaceRight = currentlyFacingRight;
 
-        bool currentlyFacingRight = !sr.flipX; 
-        bool intendsToFaceRight;
-
-        if (state == State.Attack)
-        {
+        if (state == State.Chase || state == State.Attack)
             intendsToFaceRight = (player.position.x - transform.position.x) > 0f;
-        }
-        else if (Mathf.Abs(rb.linearVelocity.x) > 0.05f) 
+        else if (state == State.Patrol || state == State.Return)
         {
-            intendsToFaceRight = rb.linearVelocity.x > 0f;
-        }
-        else 
-        {
-            if (PlayerDetected()) 
-            {
-                intendsToFaceRight = (player.position.x - transform.position.x) > 0f;
-            }
-            else 
-            {
+            if (Mathf.Abs(rb.linearVelocity.x) > 0.05f)
+                intendsToFaceRight = rb.linearVelocity.x > 0f;
+            else
                 intendsToFaceRight = (patrolTarget.position.x - transform.position.x) > 0f;
-            }
         }
 
-        if (currentlyFacingRight != intendsToFaceRight)
-        {
-            sr.flipX = !intendsToFaceRight; 
-        }
+        if (currentlyFacingRight != intendsToFaceRight) sr.flipX = !intendsToFaceRight;
 
         if (attackPoint != null)
         {
@@ -388,6 +343,8 @@ public class DarkSoul : MonoBehaviour
         {
             Gizmos.color = Color.cyan;
             Gizmos.DrawLine(leftPoint.position, rightPoint.position);
+            Gizmos.DrawSphere(leftPoint.position, 0.1f);
+            Gizmos.DrawSphere(rightPoint.position, 0.1f);
         }
 
         if (groundCheck != null)
