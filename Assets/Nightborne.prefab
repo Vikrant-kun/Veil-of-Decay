@@ -517,9 +517,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   detectionBoxSize: {x: 21, y: 4}
   detectionBoxOffset: {x: 0, y: 0}
-  attackRange: 1.5
+  attackRange: 1
   attackCooldown: 1
-  attackDamage: 10
+  attackDamage: 12
   attackPoint: {fileID: 2060410734642056977}
   attackRadius: 1
   playerLayer:

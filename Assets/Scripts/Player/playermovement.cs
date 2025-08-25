@@ -7,7 +7,6 @@ public class PlayerMovement : MonoBehaviour
 {
     public static PlayerMovement Instance { get; private set; }
     
-    // The static variable to hold the last checkpoint position
     public static Vector3 lastCheckpointPosition;
 
     [Header("Movement")]
@@ -34,6 +33,15 @@ public class PlayerMovement : MonoBehaviour
     public int maxJumps = 2;
     private int jumpCount = 0;
 
+    [Header("Wall Interaction")]
+    public Transform wallCheck;
+    public LayerMask wallLayer;
+    public float wallCheckDistance = 0.5f;
+    private bool isWallSliding = false;
+    public Vector2 wallJumpingForce = new Vector2(10f, 18f);
+    public float wallJumpingDuration = 0.4f;
+    private bool isWallJumping = false;
+
     [Header("Attack Combo")]
     private bool isAttacking = false;
     public float attack1Duration = 0.2f;
@@ -44,9 +52,8 @@ public class PlayerMovement : MonoBehaviour
     [Header("Attack Setup")]
     public Transform attackPoint;
 
-    // Reinstated: hasCrimsonAegisStrike on PlayerMovement
     [Header("Crimson Aegis Strike VFX")]
-    public bool hasCrimsonAegisStrike = false; // This flag is now back on PlayerMovement
+    public bool hasCrimsonAegisStrike = false;
     public GameObject crimsonVFX_Attack1_Prefab;
     public GameObject crimsonVFX_Attack2_Prefab;
     public GameObject crimsonVFX_Combo_Prefab;
@@ -56,10 +63,9 @@ public class PlayerMovement : MonoBehaviour
     private SpriteRenderer spriteRenderer;
     private Animator animator;
     private PlayerAttack attackScript;
-
     private PlayerInputActions playerControls;
-
     private float initialVFXSpawnPointLocalX;
+    private Rigidbody2D platformRb;
 
     void Awake()
     {
@@ -67,7 +73,6 @@ public class PlayerMovement : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            
             lastCheckpointPosition = transform.position;
         }
         else
@@ -82,9 +87,7 @@ public class PlayerMovement : MonoBehaviour
         attackScript = GetComponent<PlayerAttack>();
 
         if (attackVFXSpawnPoint != null)
-        {
             initialVFXSpawnPointLocalX = attackVFXSpawnPoint.localPosition.x;
-        }
 
         normalMoveSpeed = moveSpeed;
     }
@@ -119,7 +122,6 @@ public class PlayerMovement : MonoBehaviour
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         GameObject spawnPoint = GameObject.Find("PlayerSpawnPoint");
-
         if (spawnPoint != null)
         {
             transform.position = spawnPoint.transform.position;
@@ -183,7 +185,9 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
-        if (moveInput.x != 0 && !isAttacking)
+        CheckWallSliding();
+
+        if (moveInput.x != 0 && !isAttacking && !isWallSliding)
         {
             bool movingRight = moveInput.x > 0;
             if (movingRight != isFacingRight)
@@ -200,24 +204,56 @@ public class PlayerMovement : MonoBehaviour
         animator.SetBool("isJumping", !isGrounded && rb.linearVelocity.y > 0.1f);
         animator.SetBool("isFalling", !isGrounded && rb.linearVelocity.y < -0.1f);
         animator.SetBool("isGrounded", isGrounded);
+        animator.SetBool("isWallSliding", isWallSliding);
+    }
+
+    private void CheckWallSliding()
+    {
+        isWallSliding = Physics2D.OverlapCircle(wallCheck.position, wallCheckDistance, wallLayer) && !isGrounded && rb.linearVelocity.y < 0;
+
+        if (isWallSliding && !isWallJumping)
+        {
+            jumpCount = 0;
+        }
     }
 
     void FixedUpdate()
     {
-        if (!isAttacking && !isDashing)
+        if (!isAttacking && !isDashing && !isWallJumping)
         {
-            rb.linearVelocity = new Vector2(moveInput.x * moveSpeed, rb.linearVelocity.y);
+            Vector2 platformVelocity = (platformRb != null) ? platformRb.linearVelocity : Vector2.zero;
+            rb.linearVelocity = new Vector2(moveInput.x * moveSpeed + platformVelocity.x, rb.linearVelocity.y);
         }
     }
 
     void TryJump()
     {
-        if (jumpCount < maxJumps && !isAttacking && !isDashing)
+        if (isWallSliding)
         {
+            StartCoroutine(WallJump());
+        }
+        else if (jumpCount < maxJumps && !isAttacking && !isDashing)
+        {
+            transform.parent = null;
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
             animator.SetTrigger("isJumping");
             jumpCount++;
         }
+    }
+    
+    private IEnumerator WallJump()
+    {
+        isWallJumping = true;
+        isWallSliding = false;
+        
+        float forceX = isFacingRight ? -wallJumpingForce.x : wallJumpingForce.x;
+        rb.linearVelocity = new Vector2(forceX, wallJumpingForce.y);
+
+        Flip();
+        
+        yield return new WaitForSeconds(wallJumpingDuration);
+        
+        isWallJumping = false;
     }
 
     void TryDash()
@@ -237,6 +273,7 @@ public class PlayerMovement : MonoBehaviour
 
     IEnumerator Dash(int direction)
     {
+        transform.parent = null;
         isDashing = true;
         canDash = false;
         animator.SetTrigger("Dash");
@@ -264,8 +301,8 @@ public class PlayerMovement : MonoBehaviour
         if (comboStep == 1)
         {
             animator.Play("attack1");
-            attackScript.Attack(8f); // Reverted to single damage parameter
-            if (hasCrimsonAegisStrike && crimsonVFX_Attack1_Prefab != null) // Checks PlayerMovement's own flag
+            attackScript.Attack(8f); 
+            if (hasCrimsonAegisStrike && crimsonVFX_Attack1_Prefab != null)
             {
                 attackScript.InstantiateAttackVFX(crimsonVFX_Attack1_Prefab);
             }
@@ -274,8 +311,8 @@ public class PlayerMovement : MonoBehaviour
         else if (comboStep == 2)
         {
             animator.Play("attack2");
-            attackScript.Attack(8f); // Reverted to single damage parameter
-            if (hasCrimsonAegisStrike && crimsonVFX_Attack2_Prefab != null) // Checks PlayerMovement's own flag
+            attackScript.Attack(8f);
+            if (hasCrimsonAegisStrike && crimsonVFX_Attack2_Prefab != null)
             {
                 attackScript.InstantiateAttackVFX(crimsonVFX_Attack2_Prefab);
             }
@@ -284,16 +321,16 @@ public class PlayerMovement : MonoBehaviour
         else if (comboStep == 3)
         {
             animator.Play("attack2");
-            attackScript.Attack(15f); // Reverted to single damage parameter
-            if (hasCrimsonAegisStrike && crimsonVFX_Combo_Prefab != null) // Checks PlayerMovement's own flag
+            attackScript.Attack(15f);
+            if (hasCrimsonAegisStrike && crimsonVFX_Combo_Prefab != null)
             {
                 attackScript.InstantiateAttackVFX(crimsonVFX_Combo_Prefab);
             }
             yield return new WaitForSeconds(attack2Duration);
 
             animator.Play("attack1");
-            attackScript.Attack(15f); // Reverted to single damage parameter
-            if (hasCrimsonAegisStrike && crimsonVFX_Combo_Prefab != null) // Checks PlayerMovement's own flag
+            attackScript.Attack(15f);
+            if (hasCrimsonAegisStrike && crimsonVFX_Combo_Prefab != null)
             {
                 attackScript.InstantiateAttackVFX(crimsonVFX_Combo_Prefab);
             }
@@ -333,7 +370,7 @@ public class PlayerMovement : MonoBehaviour
 
     public void ResetAbilities()
     {
-        hasCrimsonAegisStrike = false; // Flag is reset here
+        hasCrimsonAegisStrike = false; 
     }
 
     public void ResetJumpAndDash()
@@ -342,5 +379,26 @@ public class PlayerMovement : MonoBehaviour
         canDash = true;
         hasAirDashed = false;
         isDashing = false;
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("MovingPlatform"))
+        {
+            transform.parent = collision.transform;
+            platformRb = collision.gameObject.GetComponent<Rigidbody2D>();
+        }
+    }
+
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("MovingPlatform"))
+        {
+            if (collision.gameObject.activeInHierarchy)
+            {
+                transform.parent = null;
+            }
+            platformRb = null;
+        }
     }
 }

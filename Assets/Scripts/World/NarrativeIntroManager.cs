@@ -6,7 +6,6 @@ using UnityEngine.SceneManagement; // For loading scenes
 
 public class NarrativeIntroManager : MonoBehaviour
 {
-    // Private member variables that were causing the errors
     private int currentPanelIndex = 0;
     private bool inputReady = false;
 
