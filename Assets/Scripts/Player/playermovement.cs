@@ -20,9 +20,11 @@ public class PlayerMovement : MonoBehaviour
     public float dashForce = 20f;
     public float dashDuration = 0.5f;
     public float dashCooldown = 0.5f;
+    public float dashAnimationLength = 0.6f;
     private bool isDashing = false;
     private bool canDash = true;
     private bool hasAirDashed = false;
+    private Coroutine dashCoroutine;
 
     [Header("Jump")]
     public float jumpForce = 12f;
@@ -90,6 +92,7 @@ public class PlayerMovement : MonoBehaviour
             initialVFXSpawnPointLocalX = attackVFXSpawnPoint.localPosition.x;
 
         normalMoveSpeed = moveSpeed;
+        RelinkImportantObjects();
     }
     
     public static void SetCheckpoint(Vector3 position)
@@ -133,6 +136,7 @@ public class PlayerMovement : MonoBehaviour
         }
 
         ResetJumpAndDash();
+        RelinkImportantObjects();
     }
     
     public void Respawn()
@@ -157,6 +161,7 @@ public class PlayerMovement : MonoBehaviour
         
         GetComponent<PlayerHealth>().Heal(GetComponent<PlayerHealth>().maxHealth);
         ResetJumpAndDash();
+        RelinkImportantObjects();
     }
 
     public void SetChargingWalkSpeed(bool isCharging)
@@ -173,6 +178,11 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+        if (groundCheck == null || wallCheck == null)
+        {
+            RelinkImportantObjects();
+        }
+
         if (groundCheck != null)
         {
             bool wasGrounded = isGrounded;
@@ -209,6 +219,8 @@ public class PlayerMovement : MonoBehaviour
 
     private void CheckWallSliding()
     {
+        if (wallCheck == null) return;
+        
         isWallSliding = Physics2D.OverlapCircle(wallCheck.position, wallCheckDistance, wallLayer) && !isGrounded && rb.linearVelocity.y < 0;
 
         if (isWallSliding && !isWallJumping)
@@ -219,7 +231,7 @@ public class PlayerMovement : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (!isAttacking && !isDashing && !isWallJumping)
+        if (!isDashing && !isAttacking && !isWallJumping)
         {
             Vector2 platformVelocity = (platformRb != null) ? platformRb.linearVelocity : Vector2.zero;
             rb.linearVelocity = new Vector2(moveInput.x * moveSpeed + platformVelocity.x, rb.linearVelocity.y);
@@ -262,12 +274,12 @@ public class PlayerMovement : MonoBehaviour
         int direction = isFacingRight ? 1 : -1;
         if (isGrounded && canDash)
         {
-            StartCoroutine(Dash(direction));
+            dashCoroutine = StartCoroutine(Dash(direction));
         }
         else if (!isGrounded && !hasAirDashed && jumpCount == maxJumps)
         {
             hasAirDashed = true;
-            StartCoroutine(Dash(direction));
+            dashCoroutine = StartCoroutine(Dash(direction));
         }
     }
 
@@ -276,25 +288,69 @@ public class PlayerMovement : MonoBehaviour
         transform.parent = null;
         isDashing = true;
         canDash = false;
+
+        float animationSpeedMultiplier = dashAnimationLength / dashDuration;
+        animator.speed = animationSpeedMultiplier;
+        
         animator.SetTrigger("Dash");
+
         float originalGravity = rb.gravityScale;
         rb.gravityScale = 0f;
         rb.linearVelocity = new Vector2(direction * dashForce, 0f);
         Physics2D.IgnoreLayerCollision(LayerMask.NameToLayer("Player"), LayerMask.NameToLayer("Enemy"), true);
+        
         yield return new WaitForSeconds(dashDuration);
+        
         rb.gravityScale = originalGravity;
         isDashing = false;
+        animator.speed = 1f;
+
         Physics2D.IgnoreLayerCollision(LayerMask.NameToLayer("Player"), LayerMask.NameToLayer("Enemy"), false);
+        
         if (isGrounded)
         {
             yield return new WaitForSeconds(dashCooldown);
             canDash = true;
         }
+        dashCoroutine = null;
     }
 
     IEnumerator TryAttackCombo()
     {
         if (isAttacking) yield break;
+
+        if (isDashing)
+        {
+            if (dashCoroutine != null)
+            {
+                StopCoroutine(dashCoroutine);
+            }
+            animator.speed = 1f;
+
+            isAttacking = true;
+            animator.Play("attack1");
+            attackScript.Attack(8f);
+            attackScript.InstantiateAttackVFX(crimsonVFX_Attack1_Prefab);
+
+            float originalGravity = rb.gravityScale;
+            if (originalGravity == 0) originalGravity = 5f; // Fallback gravity if needed
+            
+            yield return new WaitForSeconds(attack1Duration);
+
+            rb.gravityScale = originalGravity;
+            isDashing = false;
+            isAttacking = false;
+            dashCoroutine = null;
+            
+            // This is the new, important part that was missing
+            if (isGrounded)
+            {
+                yield return new WaitForSeconds(dashCooldown);
+                canDash = true;
+            }
+            yield break;
+        }
+
         isAttacking = true;
         comboStep = (comboStep % 3) + 1;
 
@@ -399,6 +455,45 @@ public class PlayerMovement : MonoBehaviour
                 transform.parent = null;
             }
             platformRb = null;
+        }
+    }
+    
+    private void RelinkImportantObjects()
+    {
+        if (groundCheck == null)
+        {
+            Transform found = transform.Find("GroundCheck");
+            if (found != null)
+            {
+                groundCheck = found;
+                Debug.Log("GroundCheck re-linked successfully.");
+            }
+            else
+            {
+                GameObject gc = new GameObject("GroundCheck");
+                gc.transform.SetParent(transform);
+                gc.transform.localPosition = new Vector3(0, -1f, 0);
+                groundCheck = gc.transform;
+                Debug.LogWarning("GroundCheck was missing and has been re-created.");
+            }
+        }
+        
+        if (wallCheck == null)
+        {
+            Transform found = transform.Find("WallCheck");
+            if (found != null)
+            {
+                wallCheck = found;
+                Debug.Log("WallCheck re-linked successfully.");
+            }
+            else
+            {
+                GameObject wc = new GameObject("WallCheck");
+                wc.transform.SetParent(transform);
+                wc.transform.localPosition = new Vector3(0.5f, 0, 0);
+                wallCheck = wc.transform;
+                Debug.LogWarning("WallCheck was missing and has been re-created.");
+            }
         }
     }
 }

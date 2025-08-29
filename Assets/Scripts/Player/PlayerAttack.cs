@@ -21,7 +21,6 @@ public class PlayerAttack : MonoBehaviour
     public GameObject crimsonSurgeVFXPrefab;
     public GameObject crimsonAuraVFX;
 
-    // UI elements are now PUBLIC so they can be assigned in the Inspector
     public GameObject chargeUIPanel;
     public Slider chargeUIFillBar;
     public GameObject abilityUnlockedUIPanel;
@@ -39,8 +38,7 @@ public class PlayerAttack : MonoBehaviour
     private bool gameIsPausedForMessage = false;
     private bool isPerformingCrimsonSurge = false;
     
-    // comboStep is managed by PlayerMovement, PlayerAttack doesn't need it internally here.
-    private int comboStep = 0; // Re-added comboStep for internal consistency if other scripts relied on it
+    private int comboStep = 0;
 
     public bool IsCharging()
     {
@@ -66,18 +64,9 @@ public class PlayerAttack : MonoBehaviour
     
     void Start()
     {
-        if (crimsonAuraVFX != null)
-        {
-            crimsonAuraVFX.SetActive(false);
-        }
-        if (chargeUIPanel != null)
-        {
-            chargeUIPanel.SetActive(false);
-        }
-        if (abilityUnlockedUIPanel != null)
-        {
-            abilityUnlockedUIPanel.SetActive(false);
-        }
+        if (crimsonAuraVFX != null) crimsonAuraVFX.SetActive(false);
+        if (chargeUIPanel != null) chargeUIPanel.SetActive(false);
+        if (abilityUnlockedUIPanel != null) abilityUnlockedUIPanel.SetActive(false);
     }
 
     private void Update()
@@ -142,14 +131,8 @@ public class PlayerAttack : MonoBehaviour
             playerMovement.SetChargingWalkSpeed(true);
         }
         
-        if (crimsonAuraVFX != null)
-        {
-            crimsonAuraVFX.SetActive(true);
-        }
-        if (chargeUIPanel != null)
-        {
-            chargeUIPanel.SetActive(true);
-        }
+        if (crimsonAuraVFX != null) crimsonAuraVFX.SetActive(true);
+        if (chargeUIPanel != null) chargeUIPanel.SetActive(true);
     }
     
     private void StopCharge()
@@ -160,14 +143,8 @@ public class PlayerAttack : MonoBehaviour
             playerMovement.SetChargingWalkSpeed(false);
         }
         
-        if (crimsonAuraVFX != null)
-        {
-            crimsonAuraVFX.SetActive(false);
-        }
-        if (chargeUIPanel != null)
-        {
-            chargeUIPanel.SetActive(false);
-        }
+        if (crimsonAuraVFX != null) crimsonAuraVFX.SetActive(false);
+        if (chargeUIPanel != null) chargeUIPanel.SetActive(false);
     }
     
     private void PerformCrimsonSurge()
@@ -196,37 +173,40 @@ public class PlayerAttack : MonoBehaviour
         {
             if ((enemyLayer.value & (1 << obj.gameObject.layer)) > 0)
             {
-                if (obj.gameObject == this.gameObject || obj.CompareTag("Player"))
+                if (obj.gameObject == this.gameObject || obj.CompareTag("Player")) continue;
+
+                // --- ADDED ARCHIMAGE DAMAGE LOGIC ---
+                var archimageAI = obj.GetComponentInParent<ArchimageAI>();
+                if (archimageAI != null)
+                {
+                    archimageAI.TakeDamage(100);
+                    Debug.Log($"<color=red>PlayerAttack (CrimsonSurge): Hit Archimage for 100 damage.</color>");
                     continue;
+                }
+                // --- END ADDED LOGIC ---
 
                 var belerickHealth = obj.GetComponentInParent<BelerickHealth>();
                 if (belerickHealth != null && !belerickHealth.isDead)
                 {
                     belerickHealth.TakeDamage(100); 
-                    Debug.Log($"<color=blue>PlayerAttack (CrimsonSurge): Hit Belerick ({obj.name}) for 100 damage.</color>");
                     continue;
                 }
                 var darkSoulHealth = obj.GetComponentInParent<DarkSoulHealth>();
                 if (darkSoulHealth != null)
                 {
                     darkSoulHealth.TakeDamage(100); 
-                    Debug.Log($"<color=blue>PlayerAttack (CrimsonSurge): Hit DarkSoul ({obj.name}) for 100 damage.</color>");
                     continue;
                 }
-                // --- ADDED GHOSTHEALTH HERE ---
                 var ghostHealth = obj.GetComponentInParent<GhostHealth>();
                 if (ghostHealth != null)
                 {
                     ghostHealth.TakeDamage(100);
-                    Debug.Log($"<color=blue>PlayerAttack (CrimsonSurge): Hit Ghost ({obj.name}) for 100 damage.</color>");
                     continue;
                 }
-                // --- END ADDED GHOSTHEALTH ---
                 var enemyHealth = obj.GetComponentInParent<EnemyHealth>();
                 if (enemyHealth != null)
                 {
                     enemyHealth.TakeDamage(100);
-                    Debug.Log($"<color=blue>PlayerAttack (CrimsonSurge): Hit Enemy ({obj.name}) for 100 damage.</color>");
                     continue;
                 }
             }
@@ -236,7 +216,6 @@ public class PlayerAttack : MonoBehaviour
                 if (fragileWall != null)
                 {
                     fragileWall.BreakWall();
-                    Debug.Log($"<color=blue>PlayerAttack (CrimsonSurge): Broke Fragile Wall ({obj.name}).</color>");
                 }
             }
         }
@@ -249,24 +228,14 @@ public class PlayerAttack : MonoBehaviour
     {
         Time.timeScale = 0f;
         gameIsPausedForMessage = true;
-        if (abilityUnlockedUIPanel != null)
-        {
-            abilityUnlockedUIPanel.SetActive(true);
-        }
-        if (abilityUnlockedTitleText != null)
-        {
-            abilityUnlockedTitleText.text = title;
-        }
-        if (abilityUnlockedDescriptionText != null)
-        {
-            abilityUnlockedDescriptionText.text = description;
-        }
+        if (abilityUnlockedUIPanel != null) abilityUnlockedUIPanel.SetActive(true);
+        if (abilityUnlockedTitleText != null) abilityUnlockedTitleText.text = title;
+        if (abilityUnlockedDescriptionText != null) abilityUnlockedDescriptionText.text = description;
     }
     
     public void Attack(float basePhysicalDamage)
     {
-        if (attackPoint == null || playerMovement == null)
-            return;
+        if (attackPoint == null || playerMovement == null) return;
 
         Vector2 center = attackPoint.position;
         Vector2 size = new Vector2(attackRangeX, attackRangeY);
@@ -274,14 +243,22 @@ public class PlayerAttack : MonoBehaviour
 
         foreach (var enemy in hitEnemies)
         {
-            if (enemy.gameObject == this.gameObject || enemy.CompareTag("Player"))
+            if (enemy.gameObject == this.gameObject || enemy.CompareTag("Player")) continue;
+
+            // --- ADDED ARCHIMAGE DAMAGE LOGIC ---
+            var archimageAI = enemy.GetComponentInParent<ArchimageAI>();
+            if (archimageAI != null)
+            {
+                archimageAI.TakeDamage(basePhysicalDamage);
+                Debug.Log($"<color=red>PlayerAttack (Normal): Hit Archimage for {basePhysicalDamage} physical damage.</color>");
                 continue;
+            }
+            // --- END ADDED LOGIC ---
 
             var belerickHealth = enemy.GetComponentInParent<BelerickHealth>();
             if (belerickHealth != null && !belerickHealth.isDead)
             {
                 belerickHealth.TakeDamage((int)basePhysicalDamage); 
-                Debug.Log($"<color=blue>PlayerAttack (Normal): Hit Belerick ({enemy.name}) for {(int)basePhysicalDamage} physical damage.</color>");
                 continue;
             }
 
@@ -289,23 +266,18 @@ public class PlayerAttack : MonoBehaviour
             if (darkSoulHealth != null)
             {
                 darkSoulHealth.TakeDamage(basePhysicalDamage); 
-                Debug.Log($"<color=blue>PlayerAttack (Normal): Hit DarkSoul ({enemy.name}) for {basePhysicalDamage} physical damage.</color>");
                 continue;
             }
-            // --- ADDED GHOSTHEALTH HERE ---
             var ghostHealth = enemy.GetComponentInParent<GhostHealth>();
             if (ghostHealth != null)
             {
                 ghostHealth.TakeDamage(basePhysicalDamage);
-                Debug.Log($"<color=blue>PlayerAttack (Normal): Hit Ghost ({enemy.name}) for {basePhysicalDamage} physical damage.</color>");
                 continue;
             }
-            // --- END ADDED GHOSTHEALTH ---
             var enemyHealth = enemy.GetComponentInParent<EnemyHealth>();
             if (enemyHealth != null)
             {
                 enemyHealth.TakeDamage((int)basePhysicalDamage);
-                Debug.Log($"<color=blue>PlayerAttack (Normal): Hit Enemy ({enemy.name}) for {(int)basePhysicalDamage} physical damage.</color>");
                 continue;
             }
         }
@@ -313,8 +285,7 @@ public class PlayerAttack : MonoBehaviour
 
     public void InstantiateAttackVFX(GameObject vfxPrefab)
     {
-        if (vfxPrefab == null || attackVFXSpawnPoint == null || playerSpriteRenderer == null)
-            return;
+        if (vfxPrefab == null || attackVFXSpawnPoint == null || playerSpriteRenderer == null) return;
 
         GameObject vfxInstance = Instantiate(vfxPrefab, attackVFXSpawnPoint.position, attackVFXSpawnPoint.rotation);
         SpriteRenderer vfxSpriteRenderer = vfxInstance.GetComponent<SpriteRenderer>();
@@ -343,7 +314,7 @@ public class PlayerAttack : MonoBehaviour
         isCharging = false;
         chargeTimer = 0f;
         isPerformingCrimsonSurge = false;
-        comboStep = 0; // Reset combo to start from attack1
+        comboStep = 0;
         gameIsPausedForMessage = false; 
         
         if (playerMovement != null) playerMovement.SetChargingWalkSpeed(false);

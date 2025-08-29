@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5667729777232775400}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: Fill Area
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -46,7 +46,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3524031518701256875}
   - component: {fileID: 8551714664286414693}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: PlayerHealthBar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -130,7 +130,7 @@ GameObject:
   - component: {fileID: 8973420815438696772}
   - component: {fileID: 8164090722961659748}
   - component: {fileID: 2558053026110187881}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -205,7 +205,7 @@ GameObject:
   - component: {fileID: 472008398829552787}
   - component: {fileID: 7768787167137272627}
   - component: {fileID: 7633802560805257034}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: HealFlask
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -282,7 +282,7 @@ GameObject:
   - component: {fileID: 2547525412916370453}
   - component: {fileID: 4083006260636587922}
   - component: {fileID: 4817327236187615331}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: HealFlask (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -356,7 +356,7 @@ GameObject:
   m_Component:
   - component: {fileID: 687287805257852742}
   - component: {fileID: 7349849891002398274}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: PlayerHealthSlider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -444,7 +444,7 @@ GameObject:
   - component: {fileID: 2011748690146880283}
   - component: {fileID: 8279566536844544535}
   - component: {fileID: 3506953433412719020}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -684,7 +684,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6107432677325657187}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a9970f3cbfafd4039b020cb3d6402b80, type: 3}
   m_Name: 
@@ -695,6 +695,7 @@ MonoBehaviour:
   dashForce: 20
   dashDuration: 0.2
   dashCooldown: 0.5
+  dashAnimationLength: 1.25
   jumpForce: 15
   groundCheck: {fileID: 6711042127445664517}
   groundCheckRadius: 0.2
@@ -707,7 +708,6 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8192
   wallCheckDistance: 0.5
-  wallSlidingSpeed: 2
   wallJumpingForce: {x: 10, y: 18}
   wallJumpingDuration: 0.4
   attack1Duration: 0.2
@@ -5707,7 +5707,7 @@ GameObject:
   - component: {fileID: 2669761764095357153}
   - component: {fileID: 50538610225546564}
   - component: {fileID: 7462519945213875121}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: HealFlask (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5847,7 +5847,7 @@ GameObject:
   - component: {fileID: 876960320846456631}
   - component: {fileID: 2824021597538476785}
   - component: {fileID: 2631827178907046458}
-  m_Layer: 5
+  m_Layer: 9
   m_Name: PlayerHUD
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5896,7 +5896,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 0
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_TargetDisplay: 0
 --- !u!114 &7945030163223846123
 MonoBehaviour:

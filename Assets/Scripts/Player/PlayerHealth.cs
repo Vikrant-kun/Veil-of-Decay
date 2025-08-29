@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using UnityEngine.SceneManagement; 
+using TMPro;
 
 public class PlayerHealth : MonoBehaviour
 {
@@ -114,6 +116,8 @@ public class PlayerHealth : MonoBehaviour
         UpdateFlaskIcons();
     }
 
+
+
     private void UpdateFlaskIcons()
     {
         for (int i = 0; i < flaskIcons.Length; i++)
@@ -122,11 +126,12 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
-    public void TakeDamage(int amount)
+    // --- THIS METHOD HAS BEEN UPDATED ---
+    public void TakeDamage(float amount) // Changed from int to float
     {
         if (isDead) return;
 
-        currentHealth -= amount;
+        currentHealth -= (int)amount; // Convert the float to an int for health calculation
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
 
         if (healthBarUI != null)
