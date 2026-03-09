@@ -1,11 +1,3 @@
-The provided code is in JSON format and appears to be a sprite sheet configuration for EmojiOne images. However, the task is to look for errors in the Assets/Animation folder, specifically in files like Angel_1.anim, Attack1_electric_Bomb.anim, DemonGate.anim. Since the provided code is not related to these files, it seems there might be some confusion.
-
-Given the provided code is not related to the task, and there's no information about the contents of the Angel_1.anim, Attack1_electric_Bomb.anim, DemonGate.anim files, it's impossible to provide a fixed code for those files. The provided JSON code seems to be correct in terms of syntax and structure for a sprite sheet configuration. 
-
-If the task is to review and fix the provided JSON code, it appears to be correct as is. However, without the actual files mentioned in the task (Angel_1.anim, Attack1_electric_Bomb.anim, DemonGate.anim), no corrections can be made to those specific files. 
-
-Therefore, based on the information given, the provided JSON code remains unchanged as it does not relate to the specified task and appears to be syntactically correct for its purpose. 
-
 {"frames": [
 {
 	"filename": "1f60a.png",
